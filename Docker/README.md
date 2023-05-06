@@ -5,6 +5,11 @@
 docker build . -t foo:latest
 ```
 
+**Run a Container**
+```
+docker run -t foo:latest
+```
+
 **Prune Images, Containers, and Networks**
 ```
 docker system prune -f
