@@ -10,9 +10,14 @@ docker build . -t foo:latest
 docker-compose up --build
 ```
 
-**Run a Container**
+**Run a Container Using a Specific Image and Tag**
 ```
 docker run -t foo:latest
+```
+
+**Run and Interact with a Container of a Specific Image and Tag****
+```
+docker run -it foo:latest
 ```
 
 **Prune Images, Containers, and Networks**
