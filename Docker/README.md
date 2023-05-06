@@ -5,6 +5,11 @@
 docker build . -t foo:latest
 ```
 
+**Rebuild a Container Using Docker Compose**
+```
+docker-compose up --build
+```
+
 **Run a Container**
 ```
 docker run -t foo:latest
