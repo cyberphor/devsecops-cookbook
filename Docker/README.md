@@ -25,6 +25,11 @@ docker run -it foo:latest
 docker system prune -f
 ```
 
+**Remove Multiple Images**
+```
+docker rmi certificates elastalert elasticsearch
+```
+
 **Copy a File From a Container to the Host**
 ```
 docker cp elasticsearch:/usr/share/elasticsearch/config/certs/http_ca.crt .
