@@ -30,6 +30,11 @@ docker system prune -f
 docker rmi certificates elastalert elasticsearch
 ```
 
+**Remove All Images on a Windows Host**
+```
+docker rmi $(docker images --quiet) -f
+```
+
 **Copy a File From a Container to the Host**
 ```
 docker cp elasticsearch:/usr/share/elasticsearch/config/certs/http_ca.crt .
