@@ -35,6 +35,11 @@ docker rmi certificates elastalert elasticsearch
 docker rmi $(docker images --quiet) -f
 ```
 
+**Remove All Volumes from a Windows Host**  
+```
+docker volume rm $(docker volume ls -q)
+```
+
 **Copy a File From a Container to the Host**
 ```
 docker cp elasticsearch:/usr/share/elasticsearch/config/certs/http_ca.crt .
