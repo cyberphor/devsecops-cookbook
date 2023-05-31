@@ -62,6 +62,11 @@ ls
 docker-compose logs -f
 ```
 
+**Stop Running Containers Using Docker Compose**  
+```
+docker-compose down
+```
+
 ## References
 * [Windows, curl, and Self-signed Certs](https://www.phillipsj.net/posts/windows-curl-and-self-signed-certs/)
 * [How to Run Elasticsearch 8 on Docker for Local Development](https://levelup.gitconnected.com/how-to-run-elasticsearch-8-on-docker-for-local-development-401fd3fff829)
