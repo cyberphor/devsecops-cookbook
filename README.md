@@ -1,6 +1,4 @@
-# DevOpsCheatSheets
-* [Docker](/Docker)
-* [Windows Subsystem for Linux (WSL)](/WSL)
+# DevOps Bootstraps
 
 ## Copyright
 This project is licensed under the terms of the [MIT license](/LICENSE).
