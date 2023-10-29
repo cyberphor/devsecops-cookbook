@@ -1,0 +1,9 @@
+---
+ansible_user: "{{ lookup('env', 'ANSIBLE_USER') }}"
+azure_pipeline_agent_url: "{{ lookup('env', 'AZURE_PIPELINE_AGENT_URL_LINUX') }}"
+deployment_group_prod: "{{ lookup('env', 'DEPLOYMENT_GROUP_PROD') }}"
+deployment_group_qa: "{{ lookup('env', 'DEPLOYMENT_GROUP_QA') }}"
+deployment_group_tag: "{{ lookup('env', 'DEPLOYMENT_GROUP_TAG') }}"
+deployment_group_pat: "{{ lookup('env', 'DEPLOYMENT_GROUP_PAT') }}"
+project_org: "{{ lookup('env', 'PROJECT_ORG') }}"
+project_name: "{{ lookup('env', 'PROJECT_NAME') }}"

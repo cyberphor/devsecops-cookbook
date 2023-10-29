@@ -1,0 +1,66 @@
+---
+- hosts: "all"
+  tasks:
+    - name: "Create a folder for the Azure Pipelines agent"
+      ansible.builtin.file:
+        state: directory
+        path: azagent
+    - name: "Download the Azure Pipelines agent"
+      when: azure_pipeline_agent_url is defined
+      args:
+        chdir: azagent/
+      ansible.builtin.shell: |
+        curl -fkSL -o vstsagent.tar.gz "{{ azure_pipeline_agent_url }}"
+    - name: "Decompress the Azure Pipelines agent"
+      args:
+        chdir: azagent/
+      ansible.builtin.shell: |
+        tar -zxvf vstsagent.tar.gz
+- hosts: "linux_virtual_machines_prod"
+  tasks:
+    - name: "Prepare the Azure Pipelines agent for Prod machines"
+      args:
+        chdir: azagent/
+      ansible.builtin.shell: |
+        ./config.sh --deploymentgroup \
+          --deploymentGroupName "{{ deployment_group_prod }}" \
+          --addDeploymentGroupTags \
+          --deploymentGroupTags "{{ deployment_group_tag }}" \
+          --agent "${HOSTNAME}" \
+          --url "https://dev.azure.com/{{ project_org }}" \
+          --work "_work" \
+          --projectName "{{ project_name }}" \
+          --auth "PAT" \
+          --token "{{ deployment_group_pat }}" \
+          --runAsService \
+          --unattended 
+- hosts: "linux_virtual_machines_qa"
+  tasks:
+    - name: "Prepare the Azure Pipelines agent for QA machines"
+      args:
+        chdir: azagent/
+      ansible.builtin.shell: |
+        ./config.sh --deploymentgroup \
+          --deploymentGroupName "{{ deployment_group_qa }}" \
+          --addDeploymentGroupTags \
+          --deploymentGroupTags "{{ deployment_group_tag }}" \
+          --agent "${HOSTNAME}" \
+          --url "https://dev.azure.com/{{ project_org }}" \
+          --work "_work" \
+          --projectName "{{ project_name }}" \
+          --auth "PAT" \
+          --token "{{ deployment_group_pat }}" \
+          --runAsService \
+          --unattended  
+- hosts: "all"
+  tasks:
+  - name: "Install the Azure Pipelines agent as a service"
+    args:
+      chdir: azagent/
+    ansible.builtin.shell: |
+      sudo ./svc.sh install
+  - name: "Start the Azure Pipelines agent service"
+    args:
+      chdir: azagent/
+    ansible.builtin.shell: |
+      sudo ./svc.sh start
