@@ -1,4 +1,4 @@
-# Play 01
+# Recipe 01
 
 ## Objectives
 1. Create a CI/CD pipeline for a Node.js web app
