@@ -2,7 +2,7 @@
 
 ### Recipes
 * [Recipe 01: GitHub Actions, Azure, Terraform, and Ansible](/recipe-01/README.md)
-* [Recipe 02: Windows 11 Vagrant Box via Packer](/recipe-02/README.md)
+* [Recipe 02: Windows 11 Vagrant Box via Packer](/recipe-02/)
 * [Recipe 03: Azure Virtual Machine via Terraform](/recipe-03/)
 
 ### Setup Guides
