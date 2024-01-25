@@ -3,10 +3,10 @@
 ### Recipes
 | Recipe                            | Description                                                                | 
 | --------------------------------- | -------------------------------------------------------------------------- |
-| [Recipe 01](/recipe-01/README.md) | Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH  
-| [Recipe 02](/recipe-02/README.md) | Create a Windows 11 and Server 2022 Vagrant box using Packer 
-| [Recipe 03](/recipe-03/README.md) | Create a publicly accessible Linux virtual machine in Azure using Terraform 
-| [Recipe 04](/recipe-04/README.md) | Create and configure a publicly accessible Linux virtual machine in Azure using Terraform and Ansible 
+| [01](/recipe-01/README.md) | Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH  
+| [02](/recipe-02/README.md) | Create a Windows 11 and Server 2022 Vagrant box using Packer 
+| [03](/recipe-03/README.md) | Create a publicly accessible Linux virtual machine in Azure using Terraform 
+| [04](/recipe-04/README.md) | Create and configure a publicly accessible Linux virtual machine in Azure using Terraform and Ansible 
 
 ### Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)
