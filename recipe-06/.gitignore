@@ -1,0 +1,6 @@
+azure-functions/__pycache__/
+azure-functions/venv/
+azure-functions/local.settings.json
+terraform/*.terraform*
+terraform/terraform*
+terraform/*.zip

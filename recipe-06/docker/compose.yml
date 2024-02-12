@@ -1,0 +1,12 @@
+services:
+  minecraft:
+    image: minecraft-server:v1.0.0
+    container_name: minecraft-server
+    ports:
+      - 1337:1337
+    volumes:
+      - minecraft-server-world:/opt/minecraft-server/world
+
+volumes:
+  minecraft-server-world:
+    name: minecraft-server-world
