@@ -8,7 +8,8 @@
 | [03](/recipe-03/README.md) | Create a publicly accessible Linux virtual machine in Azure using Terraform.
 | [04](/recipe-04/README.md) | Create and configure a publicly accessible Linux virtual machine in Azure using Terraform and Ansible.
 | [05](/recipe-05/README.md) | Create a Windows 11 and Server 2022 Vagrant box using Packer.
-| [06](/recipe-06/README.md) | Using Terraform, deploy a containerized application to Azure Container Instances and a Python-based serverless function to Azure Functions (the containerized application is a Minecraft Server while the serverless function can start and stop the application)
+| [06](/recipe-06/README.md) | Using Terraform, deploy a containerized application to Azure Container Instances and a Python-based serverless function to Azure Functions (the containerized application is a Minecraft Server while the serverless function can start and stop the application).
+| [07](/recipe-07/README.md) | Create and configure a publicly accessible Windows virtual machine in Azure using Terraform and Ansible.
 
 ### Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)
