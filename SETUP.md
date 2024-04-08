@@ -180,3 +180,21 @@ sudo apt install mssql-tools18 unixodbc-dev
 echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bashrc
 source ~/.bashrc
 ```
+
+## Install Homebrew on macOS
+**Step 1.** Install the Command Line Tools for macOS if you haven't already. 
+```bash
+xcode-select --install 
+```
+
+**Step 2.** Install Homebrew.
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+**Step 3.** Run the two command sentences it mentions after installation. 
+
+**Step 4.** Run Homebrew to make sure it's working. 
+```bash
+brew --version
+```
