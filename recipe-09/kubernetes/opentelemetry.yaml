@@ -1,0 +1,58 @@
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: opentelemetry-collector
+spec:
+  # the Collector can be deployed as a Deployment, StatefulSet, Sidecar, or DaemonSet of pods
+  mode: daemonset 
+  # listen for telemetry data on 0.0.0.0:4318
+  # publish telemetry data on 0.0.0.0:9464 so Prometheus can pull it
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318 
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 2000
+      batch:
+        send_batch_size: 10000
+        timeout: 10s
+    exporters:
+      debug:
+        verbosity: detailed
+      otlp/elastic:
+        endpoint: apm-server-apm-server.default.svc.cluster.local:8200
+        headers:
+          Authorization: "ApiKey okdZY0RZOEI3OHQwTWhCLS16QUc6ZGFvZXZ5cklSSi1qclBLNmZPdEF5dw=="
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug, otlp/elastic]
+        metrics:
+          receivers: [otlp]
+          exporters: [debug, otlp/elastic]
+        logs: 
+          receivers: [otlp]
+          exporters: [debug, otlp/elastic]
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: instrumentation
+spec:
+  # defines where to send telemetry data
+  exporter:
+    endpoint: http://opentelemetry-collector:4318
+  # defines the format to use when sending telemetry data
+  propagators:
+    - tracecontext
+    - baggage
+  # defines how to limit what telemetry data is sent
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"

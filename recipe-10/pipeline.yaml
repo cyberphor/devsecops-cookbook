@@ -1,0 +1,116 @@
+# set the worklow name
+name: CI/CD Pipeline
+
+# set the workflow execution criteria
+on:
+  # run this workflow when a merge happens (ex: when you commit without a PR)
+  push:
+    branches: [ main ]
+
+# stop workflows in progress if they are targeting the same branch
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# https://github.com/marketplace/actions/azure-login#login-with-openid-connect-oidc-recommended
+permissions:
+  id-token: write
+  contents: read
+
+# declare all jobs in the workflow
+jobs:
+  # declare a job in the workflow
+  release:
+    # set the job name
+    name: Release
+    # set the environment (e.g., development, staging, or production)
+    environment: development
+    # select the same virtual machine image we're using for development
+    runs-on: ubuntu-latest
+    # declare all steps in the job
+    steps:
+    # checkout this repository
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    # install Python
+    - name: Install Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    # install the Python modules needed for the job
+    - name: Install Python dependencies
+      working-directory: src/
+      run: |
+        pip install poetry
+        poetry install
+    # run smoke test
+    - name: Run smoke test
+      working-directory: src/
+      run: |
+        poetry run uvicorn api:app &
+        sleep 5
+        curl http://localhost:8000/healthcheck?
+  # declare a job in the workflow
+  deploy:
+    # set job dependency
+    needs: release
+    # set the job name
+    name: Deploy
+    # set the environment (e.g., development, staging, or production)
+    environment: development
+    # select the same virtual machine image we're using for development
+    runs-on: ubuntu-latest
+    # declare all steps in the job
+    steps:
+      # checkout this repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      # install Python
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      # install kubernetes
+      - name: Install Kubernetes
+        uses: azure/setup-kubectl@v3
+      # login to Azure
+      - name: Login to the Azure CLI
+        uses: azure/login@v2.0.0
+        with:
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+      # login to the container registry 
+      - name: Login to the container registry
+        run: az acr login --name ${{ steps.get-acr-name.outputs.CONTAINER_REGISTRY }}
+      # build, tag, and push image to container registry
+      - name: Build, tag, and push image to the container registry
+        run: docker build --push --tag ${{ steps.get-acr-name.outputs.CONTAINER_REGISTRY }}.azurecr.io/${{ vars.APP_NAME }}:v1.0.0 --platform linux/amd64 -f docker/Dockerfile .
+      # add container registry info to Kubernetes manifest
+      - name: Fill-in Kubernetes manifest values
+        working-directory: kubernetes/
+        run: |
+          sed -i 's/__APP_NAME__/${{ vars.APP_NAME }}/g' service.yaml
+          sed -i 's/__CONTAINER_REGISTRY_NAME__/${{ steps.get-acr-name.outputs.CONTAINER_REGISTRY }}/g' service.yaml
+      # login to Azure
+      - name: Login to the Azure CLI again
+        uses: azure/login@v2.0.0
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # download credentials from Kubernetes cluster for Kubectl 
+      - name: Download Kubectl's credentials from the Kubernetes cluster
+        run: az aks get-credentials --resource-group ${{ vars.APP_NAME }} --name ${{ steps.get-aks-name.outputs.CLUSTER_NAME }}
+      # initialize the Kubernetes-based service
+      - name: Initialize the "${{ vars.APP_NAME }}" service
+        run: kubectl apply -f kubernetes/service.yaml
+      # route traffic to the production environment
+      - name: Route traffic to the "${{ vars.APP_NAME }}" production environment
+        run: kubectl set selector service/${{ vars.APP_NAME }} app=${{ vars.APP_NAME }},env=production
+      ## route traffic to the staging environment
+      #- name: Route traffic to the "${{ vars.APP_NAME }}" staging environment
+      #  run: kubectl set selector service/${{ vars.APP_NAME }} app=${{ vars.APP_NAME }},env=staging
+      # initialize Elasticsearch, Fluentd, and Kibana
+      - name: Initialize Elasticsearch, Fluentd, and Kibana
+        run: kubectl apply -f kubernetes/logging/

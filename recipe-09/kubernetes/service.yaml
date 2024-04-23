@@ -1,0 +1,81 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toughalien-staging
+  labels:
+    app: toughalien
+    env: staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: toughalien
+      env: staging
+  template:
+    metadata:
+      labels:
+        app: toughalien
+        env: staging
+      annotations: 
+        instrumentation.opentelemetry.io/inject-python: "true"
+    spec:
+      containers:
+      - name: toughalien
+        image: toughalien.azurecr.io/toughalien:v1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        startupProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8080
+          periodSeconds: 10   # check every 10 seconds
+          failureThreshold: 3 # consider the container DOA after 3 failed checks
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toughalien-production
+  labels:
+    app: toughalien
+    env: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: toughalien
+      env: production
+  template:
+    metadata:
+      labels:
+        app: toughalien
+        env: production
+      annotations: 
+        instrumentation.opentelemetry.io/inject-python: 'true'
+    spec:
+      containers:
+      - name: toughalien
+        image: toughalien.azurecr.io/toughalien:v1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        startupProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8080
+          periodSeconds: 10   # check every 10 seconds
+          failureThreshold: 3 # consider the container DOA after 3 failed checks
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: toughalien
+spec:
+  type: LoadBalancer
+  selector:
+    app: toughalien
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
