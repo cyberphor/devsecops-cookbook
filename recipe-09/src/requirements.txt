@@ -1,2 +1,3 @@
 fastapi
 uvicorn
+opentelemetry-instrumentation-fastapi

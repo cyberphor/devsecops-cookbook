@@ -3,6 +3,7 @@
 # import third-party modules
 from fastapi import FastAPI
 from typing import Dict
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 # define the FastAPI app
 api = FastAPI()
@@ -18,3 +19,5 @@ def root() -> Dict[str, str]:
 def healthcheck() -> Dict[str, str]:
     """Confirms the FastAPI server works."""
     return {"status": "OK"}
+
+FastAPIInstrumentor.instrument_app(api)

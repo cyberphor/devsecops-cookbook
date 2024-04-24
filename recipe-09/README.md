@@ -12,6 +12,8 @@ If I find any helpful references, I will put them here.
 * [Elastic: Modern observability and security on Kubernetes with Elastic and OpenTelemetry](https://www.elastic.co/blog/implementing-kubernetes-observability-security-opentelemetry)
 * [Elastic: Add a Fleet Server](https://www.elastic.co/guide/en/fleet/8.5/add-fleet-server-on-prem.html)
 * [Elastic: Run Elastic Agent Standalone on Kubernetes](https://www.elastic.co/guide/en/fleet/current/running-on-kubernetes-standalone.html)
+* [Elastic APM Server Helm Chart: values.yaml example](https://github.com/elastic/helm-charts/blob/main/apm-server/examples/security/values.yaml)
+* [OpenTelemetry TLS Configuration Settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configtls/README.md)
 
 ## Notes
 If there are any additional notes, I will put them here. 
@@ -95,6 +97,11 @@ NOTES:
   $ helm --namespace=default test elasticsearch
 ```
 
+**Step 2.** Get the password for the `elastic` account. 
+```bash
+kubectl get secrets --namespace=default elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d && echo ""
+```
+
 ### Subtask 02: Create a Kibana Service
 **Step 1.** Create a Kibana service using Elastic's Kibana Helm chart. 
 ```bash
@@ -124,15 +131,20 @@ kubectl expose svc kibana-kibana --type=LoadBalancer --name siem
 ```
 
 ### Subtask 03: Create an APM Server Service
-**Step 1.** Create a APM Server service using Elastic's APM Server Helm chart. 
+**Step 1.** Open and edit [the provided APM Server configuration](kubernetes/apm-server-values.yaml). Enter the name of your Elasticsearch service in the `output.elasticsearch.hosts` field. 
 ```bash
-helm install apm-server elastic/apm-server
+vim kubernetes/apm-server-values.yaml
+```
+
+**Step 2.** Create a APM Server service using Elastic's APM Server Helm chart and the `apm-server-values.yaml` you just modified. 
+```bash
+helm install -f kubernetes/apm-server-values.yaml apm-server elastic/apm-server
 ```
 
 You should get output similar to below. 
 ```
 NAME: apm-server
-LAST DEPLOYED: Tue Apr 23 22:30:18 2024
+LAST DEPLOYED: Wed Apr 24 03:05:26 2024
 NAMESPACE: default
 STATUS: deployed
 REVISION: 1
@@ -142,23 +154,32 @@ NOTES:
   $ kubectl get pods --namespace=default -l app=apm-server-apm-server -w
 ```
 
+**Step 3.** Browse to `http://localhost:5601` and login. 
+
+**Step 4.** If you see a splash page that says "Start by adding integrations", click "Explore on my own."
+
+**Step 5.** Click the *hamburger menu* in the top-left corner. Under "Management", click "Integrations" and then, click "Elastic APM."
+
+**Step 6.** Under "Elastic APM now available in Fleet!", click "APM integration."
+
+**Step 7.** Click "Add Elastic APM." In the "Host" field, enter `apm-server-apm-server:8200`. In the "URL" field, enter `http://apm-server-apm-server:8200`. In the "New agent policy name" field, enter `Elastic APM Integration Policy`. Finally, click "Save and continue."
+
+**Step 8.** When you are prompted to "complete this integration", click "Add Elastic Agent later."
+
+**Step 9.** To confirm the APM Server is running, click the *hamburger menu* in the top-left corner. Under "Management", click "Integrations" and then, click "Elastic APM." Finally, click "Check APM Server status." You should get a response saying "You have correctly setup APM Server."
+
 ### Subtask 04: Create an API Key for the OpenTelemetry Collector
-**Step 1.** Get the password for the `elastic` account. 
-```bash
-kubectl get secrets --namespace=default elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d && echo ""
-```
+**Step 1.** Browse to `http://localhost:5601` and login. 
 
-**Step 2.** Browse to `http://localhost:5601` and login. 
+**Step 2.** If you see a splash page that says "Start by adding integrations", click "Explore on my own."
 
-**Step 3.** If you see a splash page that says "Start by adding integrations", click "Explore on my own."
+**Step 3.** Click the *hamburger menu* in the top-left corner. Under "Management", click "Stack Management."
 
-**Step 4.** Click the *hamburger menu* in the top-left corner. Under "Management", click "Stack Management."
+**Step 4.** Under "Security", click "API keys." 
 
-**Step 5.** Under "Security", click "API keys." 
+**Step 5.** Click "Create API key". Enter `OpenTelemetry Collector` in the "Name" field and then, click "Create API key."
 
-**Step 6.** Click "Create API key". Enter `OpenTelemetry Collector` in the "Name" field and then, click "Create API key."
-
-**Step 7.** Copy the base64-encoded API key generated and paste it to [the provided Kubernetes manifest file](kubernetes/opentelemetry.yaml).
+**Step 6.** Copy the base64-encoded API key generated and paste it to [the provided Kubernetes manifest file](kubernetes/opentelemetry.yaml).
 
 ## Task 02: Deploy OpenTelemetry
 **Step 1.** Add Custom Resource Definitions (CRDs) to your cluster for the following object types: Certificate and Issuer. The OpenTelemetry Operator needs them both. 
@@ -181,7 +202,7 @@ kubectl get pods -n opentelemetry-operator-system
 kubectl apply -f kubernetes/opentelemetry.yaml
 ```
 
-**Step 5.** Confirm your OpenTelemetry Collector is running by checking the status of the pods created in the previous step. 
+**Step 5.** Confirm your OpenTelemetry Collector is running by checking the status of the pods created in the previous step. You should probably also check the logs of each pod too. 
 ```bash
 kubectl get pods 
 ```
@@ -191,18 +212,59 @@ kubectl get pods
 kubectl get instrumentation
 ```
 
-## Task 03: Configure Your App to Send Telemetry Data
+## Task 03: Deploy Your App
 **Step 1.** Login to your ACR. 
 ```bash
 az acr login --name "${ACR_NAME}"
 ```
 
-**Step 2.** Build, tag, and push a container image to your ACR. Specifying `--platform linux/amd64` forces your local Docker host to build an image using the same CPU architecture as the Docker hosts that will be used in Azure. Also, the command sentence below references a Dockerfile and FastAPI-application in the folder of this recipe, feel free to use whatever image you want. 
+**Step 2.** Build, tag, and push a container image to your ACR. Specifying `--platform linux/amd64` forces your local Docker host to build an image using the same CPU architecture as the Docker hosts that will be used in Azure. Also, the command sentence below references a Dockerfile and FastAPI-application in the folder of this recipe, feel free to use whatever image you want. Just make sure it's been instrumented to use OpenTelemetry.
 ```bash
-docker build --push --tag ${ACR_NAME}.azurecr.io/${APP_NAME}:latest --platform linux/amd64 -f docker/Dockerfile src/
+docker build --push --tag ${ACR_NAME}.azurecr.io/${APP_NAME}:v1.0.0 --platform linux/amd64 -f docker/Dockerfile src/
 ```
 
 **Step 3.** Deploy your app using [the provided Kubernetes manifest file](kubernetes/service.yaml). It creates two deployments (staging and production) and one Load Balancer service. Both deployments have an annotation the OpenTelemetry Collector uses to decide whether or not to inject telemetry functions. 
 ```bash
 kubectl apply -f kubernetes/service.yaml
+```
+
+**Step 4.** If you make changes to your app and need to execute a "Blue-Green deployment strategy," use the command below. It specifically configures the load balancer for the service in question to route traffic to the `staging` deployment (i.e., the *green* environment).  
+```bash
+kubectl set selector svc/toughalien app=toughalien,env=staging
+```
+
+In order to confirm I was getting logs, I did the following: (1) submitted a HTTP request to my app, (2) checked the logs of one of my OpenTelemetry Collector pods, (3) checked my APM Server pod logs, (4) checked the Observability | APM | Services, and checked the Analytics | Discover page (data view: APM). 
+
+Below is an example of what my OpenTelemetry Collector pods returned. 
+```
+NumberDataPoints #0
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2024-04-24 04:25:18.695988703 +0000 UTC
+Value: 0.200000
+Metric #20
+Descriptor:
+     -> Name: process.runtime.cpython.context_switches
+     -> Description: Runtime context switches
+     -> Unit: switches
+     -> DataType: Sum
+     -> IsMonotonic: true
+     -> AggregationTemporality: Cumulative
+NumberDataPoints #0
+Data point attributes:
+     -> type: Str(involuntary)
+StartTimestamp: 2024-04-24 04:11:18.415360862 +0000 UTC
+Timestamp: 2024-04-24 04:25:18.695988703 +0000 UTC
+Value: 419
+NumberDataPoints #1
+Data point attributes:
+     -> type: Str(voluntary)
+StartTimestamp: 2024-04-24 04:11:18.415360862 +0000 UTC
+Timestamp: 2024-04-24 04:25:18.695988703 +0000 UTC
+Value: 9585
+        {"kind": "exporter", "data_type": "metrics", "name": "debug"}
+```
+
+Below is an example of what my APM Server pod returned.
+```
+{"log.level":"info","@timestamp":"2024-04-24T04:26:18.874Z","log.logger":"beater.grpc","log.origin":{"file.name":"interceptors/logging.go","file.line":65},"message":"request accepted","service.name":"apm-server","source.address":"10.244.0.24:60556","grpc.request.method":"/opentelemetry.proto.collector.metrics.v1.MetricsService/Export","event.duration":3379935,"grpc.response.status_code":"OK","ecs.version":"1.6.0"}
 ```

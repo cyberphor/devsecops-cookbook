@@ -12,6 +12,7 @@ spec:
     receivers:
       otlp:
         protocols:
+          grpc:
           http:
             endpoint: 0.0.0.0:4318 
     processors:
@@ -25,9 +26,9 @@ spec:
       debug:
         verbosity: detailed
       otlp/elastic:
-        endpoint: apm-server-apm-server.default.svc.cluster.local:8200
-        headers:
-          Authorization: "ApiKey okdZY0RZOEI3OHQwTWhCLS16QUc6ZGFvZXZ5cklSSi1qclBLNmZPdEF5dw=="
+        endpoint: apm-server-apm-server:8200
+        tls:
+          insecure: true
     service:
       pipelines:
         traces:
@@ -45,9 +46,10 @@ kind: Instrumentation
 metadata:
   name: instrumentation
 spec:
-  # defines where to send telemetry data
+  # defines where apps will send telemetry data
+  # within a pod, the app sends data to the pod's OpenTelemetry Collector who relays it to Elasticsearch
   exporter:
-    endpoint: http://opentelemetry-collector:4318
+    endpoint: http://opentelemetry-collector-collector:4318 # must match the name of your OpenTelemetry Collector service!
   # defines the format to use when sending telemetry data
   propagators:
     - tracecontext

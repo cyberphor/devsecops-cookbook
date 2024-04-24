@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: toughalien
-        image: toughalien.azurecr.io/toughalien:v1.0.0
+        image: toughalien.azurecr.io/toughalien:v2.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
