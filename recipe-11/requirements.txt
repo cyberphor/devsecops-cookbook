@@ -1,0 +1,5 @@
+fastapi
+opentelemetry-distro                  # does Tracer Provider, Batch Processor, and Exporter setup for you
+opentelemetry-instrumentation-fastapi # used when creating traces and spans
+opentelemetry-exporter-otlp           # used when exporting telemetry data
+uvicorn
