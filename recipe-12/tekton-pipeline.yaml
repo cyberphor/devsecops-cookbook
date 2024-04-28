@@ -1,0 +1,86 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: ci
+  namespace: default
+spec:
+  params:
+    - name: repo-url           # the SSH url for your GitHub repository
+      type: string
+    - name: image-reference    # FQDN of your ACR
+      type: string
+  workspaces:
+    - name: shared-data
+    - name: git-credentials
+    - name: docker-credentials 
+  tasks:
+    - name: fetch-source
+      taskRef:
+        name: git-clone
+      workspaces:
+      - name: output
+        workspace: shared-data
+      - name: ssh-directory
+        workspace: git-credentials
+      params:
+      - name: url
+        value: $(params.repo-url)
+    - name: run-tests
+      runAfter: ["fetch-source"]
+      taskRef:
+        name: run-tests
+      workspaces:
+      - name: source
+        workspace: shared-data
+    - name: build-push-llm
+      runAfter: ["run-tests"]
+      taskRef:
+        name: kaniko
+      workspaces:
+      - name: source
+        workspace: shared-data
+      - name: dockerconfig
+        workspace: docker-credentials  
+      params:
+      - name: IMAGE
+        value: $(params.image-reference)/llm:$(tasks.fetch-source.results.committer-date)-$(tasks.fetch-source.results.commit)
+      - name: DOCKERFILE
+        value: src/toughalien/docker/Dockerfile
+      - name: CONTEXT
+        value: src/toughalien
+    - name: scan-dep-llm 
+      runAfter: ["build-push-llm"]
+      taskRef:
+        name: grype
+      workspaces:
+      - name: docker-credentials  
+        workspace: docker-credentials  
+      params:
+      - name: ARGS
+        value: ["-o", "json", "$(tasks.build-push-llm.results.IMAGE_URL)"]
+    - name: build-push-django
+      runAfter: ["scan-dep-llm"]
+      taskRef:
+        name: kaniko
+      workspaces:
+      - name: source
+        workspace: shared-data
+      - name: dockerconfig
+        workspace: docker-credentials  
+      params:
+      - name: IMAGE
+        value: $(params.image-reference)/login:$(tasks.fetch-source.results.committer-date)-$(tasks.fetch-source.results.commit)
+      - name: DOCKERFILE
+        value: src/django/docker/Dockerfile
+      - name: CONTEXT
+        value: src/django
+    - name: scan-dep-django 
+      runAfter: ["build-push-django"]
+      taskRef:
+        name: grype
+      workspaces:
+      - name: docker-credentials  
+        workspace: docker-credentials   
+      params:
+      - name: ARGS
+        value: ["-o", "json", "$(tasks.build-push-django.results.IMAGE_URL)"]

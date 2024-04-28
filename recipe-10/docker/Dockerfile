@@ -10,7 +10,7 @@ COPY requirements.txt requirements.txt
 RUN python -m pip install -r requirements.txt
 
 # copy the source code
-COPY app.py app.py
+COPY api.py api.py
 
 # using Uvicorn invoke the FastAPI object defined in app.py that is called API
-CMD ["python", "-m", "uvicorn", "app:api", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8080"]

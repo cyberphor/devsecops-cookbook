@@ -2,27 +2,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: toughalien-staging
+  name: toughalien-production
   labels:
     app: toughalien
-    env: staging
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: toughalien
-      env: staging
+      env: production
   template:
     metadata:
       labels:
         app: toughalien
-        env: staging
+        env: production
       annotations: 
-        instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/inject-python: "true" # used to tell the OTEL agent where to export telemetry
     spec:
       containers:
       - name: toughalien
-        image: toughalien.azurecr.io/toughalien:v2.0.0
+        image:  toughalien.azurecr.io/toughalien:v1.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -36,27 +35,26 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: toughalien-production
+  name: toughalien-staging
   labels:
     app: toughalien
-    env: production
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: toughalien
-      env: production
+      env: staging
   template:
     metadata:
       labels:
         app: toughalien
-        env: production
+        env: staging
       annotations: 
-        instrumentation.opentelemetry.io/inject-python: 'true'
+        instrumentation.opentelemetry.io/inject-python: "true" # used to tell the OTEL agent where to export telemetry
     spec:
       containers:
       - name: toughalien
-        image: toughalien.azurecr.io/toughalien:v3.0.0
+        image:  toughalien.azurecr.io/toughalien:v1.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 8080

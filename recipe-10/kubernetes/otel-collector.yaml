@@ -2,19 +2,15 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: opentelemetry-collector
+  name: otel
 spec:
-  # the Collector can be deployed as a Deployment, StatefulSet, Sidecar, or DaemonSet of pods
-  mode: daemonset 
-  # listen for telemetry data on 0.0.0.0:4318
-  # publish telemetry data on 0.0.0.0:9464 so Prometheus can pull it
+  mode: deployment
   config: |
     receivers:
       otlp:
         protocols:
-          grpc:
           http:
-            endpoint: 0.0.0.0:4318 
+            endpoint: 0.0.0.0:4318
     processors:
       memory_limiter:
         check_interval: 1s
@@ -44,12 +40,11 @@ spec:
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
-  name: instrumentation
+  name: otel-instrumentation
 spec:
-  # defines where apps will send telemetry data
-  # within a pod, the app sends data to the pod's OpenTelemetry Collector who relays it to Elasticsearch
+  # defines where to send telemetry data
   exporter:
-    endpoint: http://opentelemetry-collector-collector:4318 # must match the name of your OpenTelemetry Collector service!
+    endpoint: http://otel-collector:4318
   # defines the format to use when sending telemetry data
   propagators:
     - tracecontext

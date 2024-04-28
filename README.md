@@ -12,7 +12,7 @@
 | [07](/recipe-07/README.md) | Create and configure a publicly accessible Windows virtual machine in Azure using Terraform and Ansible.
 | [08](/recipe-08/README.md) | Create a Data Flow Diagram using Markdown and Mermaid.
 | [09](/recipe-09/README.md) | Work-in-progress
-| [10](/recipe-10/README.md) | Work-in-progress
+| [10](/recipe-10/README.md) | Add Observability to an Kubernetes Cluster Using OpenTelemetry and Elastic 
 | [11](/recipe-11/README.md) | Work-in-progress
 
 ### Setup Guides
