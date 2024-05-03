@@ -1,0 +1,55 @@
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel
+spec:
+  mode: deployment
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 2000
+      batch:
+        send_batch_size: 10000
+        timeout: 10s
+    exporters:
+      debug:
+        verbosity: detailed
+      otlp/elastic:
+        endpoint: apm-server-apm-server:8200
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug, otlp/elastic]
+        metrics:
+          receivers: [otlp]
+          exporters: [debug, otlp/elastic]
+        logs: 
+          receivers: [otlp]
+          exporters: [debug, otlp/elastic]
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: otel-instrumentation
+spec:
+  # defines where to send telemetry data
+  exporter:
+    endpoint: http://otel-collector:4318
+  # defines the format to use when sending telemetry data
+  propagators:
+    - tracecontext
+    - baggage
+  # defines how to limit what telemetry data is sent
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"

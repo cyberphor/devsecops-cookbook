@@ -14,6 +14,8 @@
 | [09](/recipe-09/README.md) | Work-in-progress
 | [10](/recipe-10/README.md) | Add Observability to an Kubernetes Cluster Using OpenTelemetry and Elastic 
 | [11](/recipe-11/README.md) | Work-in-progress
+| [12](/recipe-12/README.md) | Work-in-progress
+| [13](/recipe-13/README.md) | Work-in-progress
 
 ### Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)
