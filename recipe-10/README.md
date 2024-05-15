@@ -1,5 +1,5 @@
-## Recipe 10: Add Observability to an Kubernetes Cluster Using OpenTelemetry and Elastic 
-The purpose of this recipe is to add observability and security to a Kubernetes cluster using OpenTelemetry and Elastic. 
+## Recipe 10: Add observability and security to an Azure Kubernetes Service (AKS) instance using OpenTelemetry and Elastic.
+The purpose of this recipe is to add observability and security to an AKS instance using OpenTelemetry and Elastic. 
 * [References](#references)
 * [Notes](#notes)
 * [Setup](#setup)
@@ -14,25 +14,77 @@ If I find any helpful references, I will put them here.
 * [Elastic: Run Elastic Agent Standalone on Kubernetes](https://www.elastic.co/guide/en/fleet/current/running-on-kubernetes-standalone.html)
 * [Elastic APM Server Helm Chart: values.yaml example](https://github.com/elastic/helm-charts/blob/main/apm-server/examples/security/values.yaml)
 * [OpenTelemetry TLS Configuration Settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configtls/README.md)
+* [Azure: Configure a federated identity credential on an app](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-create-trust?pivots=identity-wif-apps-methods-azp#github-actions)
+* [Azure: Configure a GitHub Action to create a container instance](https://learn.microsoft.com/en-us/azure/container-instances/container-instances-github-action?tabs=openid)
+* [Elastic Integration](https://docs.elastic.co/integrations)
+* [Switch to the Elastic APM integration](https://www.elastic.co/guide/en/observability/current/apm-upgrade-to-apm-integration.html)
+* [Fleet-Managed APM Server](https://www.elastic.co/guide/en/observability/8.13/_fleet_managed_apm_server.html)
 
 ## Notes
-If there are any additional notes, I will put them here. 
+If there are any additional notes, I will put them here.
+
+**Elastic Integrations**   
+In order to add Integrations to Elastic Agent, reference the URLs here: [https://docs.elastic.co/integrations/](https://docs.elastic.co/integrations/). For example, the name of the Package Name for APM is `apm` because the URL for the integration looks like this `https://docs.elastic.co/integrations/apm`. Meanwhile, the Package Name for Fleet Server is `fleet_server` because the URL for this integration is `https://docs.elastic.co/integrations/fleet_server`. 
+```yaml
+  config:
+    xpack.fleet.agents.elasticsearch.hosts: ["https://elasticsearch-es-http.default.svc:9200"]
+    xpack.fleet.agents.fleet_server.hosts: ["https://fleet-server-agent-http.default.svc:8220"]
+    xpack.fleet.packages:
+    - name: system
+      version: latest
+    - name: elastic_agent
+      version: latest
+    - name: fleet_server
+      version: latest
+    - name: kubernetes
+      version: latest
+    - name: apm
+      version: latest
+    - name: endpoint
+      version: latest
+    xpack.fleet.agentPolicies:
+    - name: Fleet Server Policy
+      id: fleet-server
+      namespace: default
+      monitoring_enabled:
+      - logs
+      - metrics
+      unenroll_timeout: 900
+      package_policies:
+      - name: fleet_server-1
+        id: fleet_server-1
+        package:
+          name: fleet_server
+    - name: Elastic Agent Policy
+      id: elastic-agent
+      namespace: default
+      monitoring_enabled:
+      - logs
+      - metrics
+      unenroll_timeout: 900
+      package_policies:
+      - name: system-1
+        package:
+          name: system
+      - name: kubernetes-1 
+        package:
+          name: kubernetes
+      - name: apm-1 
+        package:
+          name: apm
+```
 
 ## Setup
 This recipe assumes (1) you're using a Linux-based environment (GitHub Codespaces, Azure Shell, Windows Subsystem for Linux, etc.), (2) you've installed the software required for this recipe (i.e., Python, Docker, Kubernetes, Helm, and Azure CLI), (3) you've forked this repository, (4) you've downloaded this repository, and (5) you're running commands from the `recipe-10/` folder. 
 
 **Step 1.** Define environment variables for your infrastructure. I usually save my environment variables in a file called something like `.env` and run `source .env` as needed. This makes it easy to pick up where I left off after leaving my workspace for an extended period of time. If you didn't know, the `source` command reads and executes shell commands from the file you provide it.   
 ```bash
-export APP_NAME="toughalien"
-export SUBSCRIPTION_ID="Personal"
+export APP_NAME="squidfall"
+export SUBSCRIPTION_ID="c60c349f-4b5c-4e39-98cb-4fc2323804c5"
 export LOCATION="eastus"
-export RESOURCE_GROUP_NAME="toughalien"
-export ACR_NAME="toughalien"
-export ACR_SKU="Basic"
-export AKS_CLUSTER_NAME="toughalien"
-export AKS_NODE_COUNT=4
+export RESOURCE_GROUP_NAME="${APP_NAME}"
 ```
-
+ 
 **Step 2.** Login to Azure using the CLI. 
 ```bash
 az login --use-device-code
@@ -43,124 +95,144 @@ az login --use-device-code
 az account set --subscription "${SUBSCRIPTION_ID}"
 ```
 
-**Step 4.** Create a resource group to house the Azure Container Registry (ACR) and Azure Kubernetes Service (AKS) instance you're about to make. 
+**Step 4.** Create a virtual environment to house the `scripts/init_azure.py` script's Python dependencies. 
 ```bash
-az group create --name "${RESOURCE_GROUP_NAME}" --location eastus
+python -m venv .venv
 ```
 
-**Step 5.** Create an ACR. 
+**Step 5.** Activate the `scripts/init_azure.py` script's Python virtual environment. 
 ```bash
-az acr create --resource-group "${RESOURCE_GROUP_NAME}" --name "${ACR_NAME}" --sku "${ACR_SKU}"
+source .venv/bin/activate
 ```
 
-**Step 6.** Create an AKS instance. This step will (1) create an additional resource group to house Kubernetes nodes and then (2) add an AKS instance to your first resource group. 
+**Step 6.** Install the `scripts/init_azure.py` script's Python dependencies.
 ```bash
-az aks create --resource-group "${RESOURCE_GROUP_NAME}" --name "${AKS_CLUSTER_NAME}" --enable-managed-identity --node-count "${AKS_NODE_COUNT}" --generate-ssh-keys --node-resource-group "${APP_NAME}-kubernetes-nodes"
+python -m pip install -r scripts/requirements.txt
 ```
 
-**Step 7.** Attach your ACR to your AKS instance. Do not skip this step. Otherwise, your AKS instance won't have access to your ACR and you'll get `ErrImagePull`, `Failed to pull image`, and `401 Unauthorized` errors when you begin deploying containers. 
+**Step 7.** Run the `scripts/init_azure.py` script. 
 ```bash
-az aks update --resource-group "${RESOURCE_GROUP_NAME}" --name "${AKS_CLUSTER_NAME}" --attach-acr "${ACR_NAME}"
+python scripts/init_azure.py --app-name "${APP_NAME}" --subscription-id "${SUBSCRIPTION_ID}" --location "${LOCATION}"
 ```
 
-**Step 8.** Download credentials from your AKS instance for `kubectl` to use.
-```bash
-az aks get-credentials --resource-group "${RESOURCE_GROUP_NAME}" --name "${AKS_CLUSTER_NAME}"
+You should get output similar to below.
+```
+[*] Created Terraform state resource group
+[*] Created Terraform state storage account
+[*] Created Terraform state blob container
+[!] Copy and paste the commands below into your shell environment:
+
+terraform -chdir=terraform init -backend-config="storage_account_name=squidfallc60c349f4b5c666" -backend-config="access_key=hhJpx3xDkS8ciDBbwvn9150vLU5UO3FMVzTS0PQzKMar8SOz/0iQuKcdvuX1TNw+2WsCmtc2yhPV+AStIPW666=="
+terraform -chdir=terraform apply
 ```
 
-**Step 9.** Add Elastic's remote Helm repository to your local Helm registry. 
-```bash
-helm repo add elastic https://helm.elastic.co
+**Step 8.** Copy and paste the commands printed by the previous step (enter `yes` when prompted). You should get output similar to below. It creates the following resources: resource group, container registry, Kubernetes cluster, and role assignment. 
+```
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+ACR_NAME = "squidfall"
+AKS_NAME = "squidfall"
 ```
 
-## Task 01: Deploy Elastic
-### Subtask 01: Create an Elasticsearch Service
-**Step 1.** Create an Elasticsearch service using Elastic's Elasticsearch Helm chart. 
+**Step 9.** Copy and paste the commands below to your terminal session to declare and initialize the remaining environment variables needed.
 ```bash
-helm install elasticsearch elastic/elasticsearch
+export ACR_NAME=$(terraform -chdir=terraform output -raw ACR_NAME)
+export AKS_NAME=$(terraform -chdir=terraform output -raw AKS_NAME)
+```
+
+**Step 10.** Download credentials from your AKS instance for `kubectl` to use. 
+```bash
+az aks get-credentials --resource-group "${RESOURCE_GROUP_NAME}" --name "${AKS_NAME}"
+```
+
+## Task 01: Deploy the Elastic Stack
+**Step 1.** Install Elastic's Custom Resource Definitions (CRDs).
+```bash
+kubectl create -f https://download.elastic.co/downloads/eck/2.12.1/crds.yaml
+```
+
+You should get output similar to below.
+```
+customresourcedefinition.apiextensions.k8s.io/agents.agent.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/apmservers.apm.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/beats.beat.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/elasticmapsservers.maps.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/elasticsearchautoscalers.autoscaling.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/elasticsearches.elasticsearch.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/enterprisesearches.enterprisesearch.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/kibanas.kibana.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/logstashes.logstash.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/stackconfigpolicies.stackconfigpolicy.k8s.elastic.co created
+```
+
+**Step 2.** Install the Elastic Operator.
+```bash
+kubectl apply -f https://download.elastic.co/downloads/eck/2.12.1/operator.yaml
+```
+
+You should get output similar to below.
+```
+namespace/elastic-system created
+serviceaccount/elastic-operator created
+secret/elastic-webhook-server-cert created
+configmap/elastic-operator created
+clusterrole.rbac.authorization.k8s.io/elastic-operator created
+clusterrole.rbac.authorization.k8s.io/elastic-operator-view created
+clusterrole.rbac.authorization.k8s.io/elastic-operator-edit created
+clusterrolebinding.rbac.authorization.k8s.io/elastic-operator created
+service/elastic-webhook-server created
+statefulset.apps/elastic-operator created
+validatingwebhookconfiguration.admissionregistration.k8s.io/elastic-webhook.k8s.elastic.co created
+```
+
+**Step 3.** Apply the provided Kubernetes manifest. 
+```bash
+kubectl apply -f kubernetes/elastic.yaml
+```
+
+**Step 4.** Expose the Kibana service by deploying a Load Balancer service to route traffic to it. The command sentence below creates a Load Balancer service called `siem`. SIEM is an acronym for Security Incident and Event Manager. 
+```bash
+kubectl expose svc kibana-kb-http --type=LoadBalancer --name siem
+```
+
+**Step 5.** Get the external IP address of the `siem` service. 
+```bash
+kubectl get svc/siem
 ```
 
 You should get output similar to below. 
 ```
-NAME: elasticsearch
-LAST DEPLOYED: Sun Apr 28 15:16:46 2024
-NAMESPACE: default
-STATUS: deployed
-REVISION: 1
-NOTES:
-1. Watch all cluster members come up.
-  $ kubectl get pods --namespace=default -l app=elasticsearch-master -w
-2. Retrieve elastic user's password.
-  $ kubectl get secrets --namespace=default elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
-3. Test cluster health using Helm test.
-  $ helm --namespace=default test elasticsearch
+NAME   TYPE           CLUSTER-IP   EXTERNAL-IP      PORT(S)          AGE
+siem   LoadBalancer   10.0.19.99   48.216.128.246   5601:32236/TCP   11s
 ```
 
-### Subtask 02: Create a Kibana Service
-**Step 1.** Create a Kibana service using Elastic's Kibana Helm chart. 
+**Step 6.** Get the password for the `elastic` account. 
 ```bash
-helm install kibana elastic/kibana
+kubectl get secrets elasticsearch-es-elastic-user -ojsonpath="{.data.elastic}" | base64 -d && echo ""
 ```
 
-You should get output similar to below. 
+**Step 7.** Open a browser and go to TCP port 5601 on the external IP address of the `siem` service (e.g., `https://48.216.128.246`). Then, login. For the username field, enter `elastic`. For the password field, use the one you printed to the console in the previous step.
+
+**Step 8.** Text goes here.
+```mermaid
+flowchart TD
+  subgraph Node
+    subgraph Service
+      OTELAgent["OTEL Agent"]
+    end
+    subgraph OTELCollector["OTEL Collector"]
+      OTELExporter["OTEL Exporter"]
+    end
+    subgraph ElasticAgent
+      APMIntegration["Elastic APM Integration"]
+      DefendIntegration["Elastic Defend Integration"]
+    end
+    Elasticsearch
+  end
+  OTELAgent --> OTELCollector --> APMIntegration --> Elasticsearch
 ```
-NAME: kibana
-LAST DEPLOYED: Sun Apr 28 15:17:51 2024
-NAMESPACE: default
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-1. Watch all containers come up.
-  $ kubectl get pods --namespace=default -l release=kibana -w
-2. Retrieve the elastic user's password.
-  $ kubectl get secrets --namespace=default elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
-3. Retrieve the kibana service account token.
-  $ kubectl get secrets --namespace=default kibana-kibana-es-token -ojsonpath='{.data.token}' | base64 -d
-```
-
-**Step 2.** Expose the Kibana service by deploying a Load Balancer service to route traffic to it. The command sentence creates a Load Balancer service called `siem`. SIEM is an acronym for Security Incident and Event Manager. 
-```bash
-kubectl expose svc kibana-kibana --type=LoadBalancer --name siem
-```
-
-### Subtask 03: Create an APM Server Service
-**Step 1.** Create a APM Server service using Elastic's APM Server Helm chart and the provided `apm-server-values.yaml` file. 
-```bash
-helm install -f kubernetes/apm-server-values.yaml apm-server elastic/apm-server
-```
-
-You should get output similar to below. 
-```
-NAME: apm-server
-LAST DEPLOYED: Sun Apr 28 15:20:02 2024
-NAMESPACE: default
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-1. Watch all containers come up.
-  $ kubectl get pods --namespace=default -l app=apm-server-apm-server -w
-```
-
-**Step 3.** Get the password for the `elastic` account. 
-```bash
-kubectl get secrets --namespace=default elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d && echo ""
-```
-
-**Step 4.** Open a browser to TCP port 5601 on the external IP address of the `siem` service you created in the previous subtask and login. For the username field, use `elastic`. For the password field, use the one you printed to the console in the previous step.
-
-**Step 5.** If you see a splash page that says "Start by adding integrations", click "Explore on my own."
-
-**Step 6.** Click the *hamburger menu* in the top-left corner. Under "Management", click "Integrations" and then, click "Elastic APM."
-
-**Step 7.** Under "Elastic APM now available in Fleet!", click "APM integration."
-
-**Step 8.** Click "Add Elastic APM." In the "Host" field, enter `apm-server-apm-server:8200`. In the "URL" field, enter `http://apm-server-apm-server:8200`. In the "New agent policy name" field, enter `APM Server Integration Policy`. Finally, click "Save and continue."
-
-**Step 9.** When you are prompted to "complete this integration", click "Add Elastic Agent later."
-
-**Step 10.** To confirm the APM Server is running, click the *hamburger menu* in the top-left corner. Under "Management", click "Integrations" and then, click "Elastic APM." Finally, click "Check APM Server status." You should get a response saying "You have correctly setup APM Server."
 
 ## Task 02: Deploy OpenTelemetry
 **Step 1.** Add Custom Resource Definitions (CRDs) to your cluster for the following object types: Certificate and Issuer. The OpenTelemetry Operator needs them both. 
@@ -217,19 +289,19 @@ kubectl set selector svc/${APP_NAME} app=${APP_NAME},env=production
 ### Validation
 In order to confirm I was getting logs, I did the step below. 
 
-**Step 1.** Cubmitted a HTTP request to my app. 
+**Step 1.** Submitted a HTTP request to my app. 
 ```bash
 curl http://4.246.250.101/
 ```
 
 **Step 2.** Checked my's app pod logs. 
 ```bash
-kubectl logs pods/toughalien-staging-778d964f9b-lhr4p
+kubectl logs pods/squidfall-staging-778d964f9b-lhr4p
 ```
 
 Below is an example of what it logged.
 ```
-Defaulted container "toughalien" out of: toughalien, opentelemetry-auto-instrumentation-python (init)
+Defaulted container "squidfall" out of: squidfall, opentelemetry-auto-instrumentation-python (init)
 Attempting to instrument FastAPI app while already instrumented
 INFO:     Started server process [1]
 INFO:     Waiting for application startup.

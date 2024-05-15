@@ -1,4 +1,4 @@
-# Recipe 09: OpenTelemetry
+# Recipe 09: Deploy an OpenTelemetry Agent and OpenTelemetry Collector
 
 **References**
 * [OpenTelemetry Distro](https://opentelemetry.io/docs/languages/python/distro/)

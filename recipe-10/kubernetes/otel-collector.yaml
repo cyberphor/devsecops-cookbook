@@ -4,7 +4,12 @@ kind: OpenTelemetryCollector
 metadata:
   name: otel
 spec:
-  mode: deployment
+  mode: daemonset
+  env:
+  - name: NODE_IP
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
   config: |
     receivers:
       otlp:
@@ -22,7 +27,7 @@ spec:
       debug:
         verbosity: detailed
       otlp/elastic:
-        endpoint: apm-server-apm-server:8200
+        endpoint: ${NODE_IP}:8200
         tls:
           insecure: true
     service:
@@ -42,14 +47,11 @@ kind: Instrumentation
 metadata:
   name: otel-instrumentation
 spec:
-  # defines where to send telemetry data
   exporter:
     endpoint: http://otel-collector:4318
-  # defines the format to use when sending telemetry data
   propagators:
     - tracecontext
     - baggage
-  # defines how to limit what telemetry data is sent
   sampler:
     type: parentbased_traceidratio
     argument: "1"

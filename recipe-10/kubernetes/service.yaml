@@ -2,26 +2,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: toughalien-production
+  name: squidfall-production
   labels:
-    app: toughalien
+    app: squidfall
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: toughalien
+      app: squidfall
       env: production
   template:
     metadata:
       labels:
-        app: toughalien
+        app: squidfall
         env: production
       annotations: 
         instrumentation.opentelemetry.io/inject-python: "true" # used to tell the OTEL agent where to export telemetry
     spec:
       containers:
-      - name: toughalien
-        image:  toughalien.azurecr.io/toughalien:v1.0.0
+      - name: squidfall
+        image:  squidfall.azurecr.io/squidfall:v1.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -35,26 +35,26 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: toughalien-staging
+  name: squidfall-staging
   labels:
-    app: toughalien
+    app: squidfall
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: toughalien
+      app: squidfall
       env: staging
   template:
     metadata:
       labels:
-        app: toughalien
+        app: squidfall
         env: staging
       annotations: 
         instrumentation.opentelemetry.io/inject-python: "true" # used to tell the OTEL agent where to export telemetry
     spec:
       containers:
-      - name: toughalien
-        image:  toughalien.azurecr.io/toughalien:v1.0.0
+      - name: squidfall
+        image:  squidfall.azurecr.io/squidfall:v1.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -68,11 +68,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: toughalien
+  name: squidfall
 spec:
   type: LoadBalancer
   selector:
-    app: toughalien
+    app: squidfall
   ports:
     - protocol: TCP
       port: 80

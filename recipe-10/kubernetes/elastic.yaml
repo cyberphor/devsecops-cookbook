@@ -32,6 +32,10 @@ spec:
       version: latest
     - name: kubernetes
       version: latest
+    - name: apm
+      version: latest
+    - name: endpoint
+      version: latest
     xpack.fleet.agentPolicies:
     - name: Fleet Server Policy
       id: fleet-server
@@ -59,6 +63,19 @@ spec:
       - name: kubernetes-1 
         package:
           name: kubernetes
+      - name: apm-1 
+        package:
+          name: apm
+        inputs:
+        - type: apm
+          keep_enabled: true
+          vars:
+          - name: host
+            value: 0.0.0.0:8200
+            frozen: true
+          - name: url
+            value: "http://0.0.0.0:8200"
+            frozen: true
 ---
 apiVersion: agent.k8s.elastic.co/v1alpha1
 kind: Agent
