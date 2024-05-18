@@ -15,7 +15,8 @@
 | [10](/recipe-10/README.md) | (work-in-progress) Add observability and security to an Azure Kubernetes Service (AKS) instance using OpenTelemetry and Elastic.
 | [11](/recipe-11/README.md) | (work-in-progress) GitHub Actions Workflows.
 | [12](/recipe-12/README.md) | (work-in-progress) Tekton. 
-| [13](/recipe-14/README.md) | (work-in-progress) OpenStack.
+| [13](/recipe-12/README.md) | (work-in-progress) OpenStack.
+| [14](/recipe-14/README.md) | (work-in-progress) Create a Proxmox-based Kubernetes Node Virtual Machine Template Using Packer.
 
 ### Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)
