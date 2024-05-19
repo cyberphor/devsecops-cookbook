@@ -1,8 +1,9 @@
+#cloud-config
 autoinstall:
   version: 1
   locale: en_US
   keyboard:
-    layout: en
+    layout: de
   ssh:
     install-server: true
     allow-pw: true
@@ -10,8 +11,8 @@ autoinstall:
     ssh_quiet_keygen: true
     allow_public_ssh_keys: true
   packages:
-  - qemu-guest-agent
-  - sudo
+    - qemu-guest-agent
+    - sudo
   storage:
     layout:
       name: direct
@@ -19,11 +20,14 @@ autoinstall:
       size: 0
   user-data:
     package_upgrade: false
-    timezone: UTC
+    timezone: Europe/Berlin
     users:
-    - name: victor
-      groups: [adm, sudo]
-      lock-passwd: false
-      sudo: ALL=(ALL) NOPASSWD:ALL
-      shell: /bin/bash
-      passwd: password123!
+      - name: your-user-name
+        groups: [adm, sudo]
+        lock-passwd: false
+        sudo: ALL=(ALL) NOPASSWD:ALL
+        shell: /bin/bash
+        # passwd: your-password
+        # - or -
+        # ssh_authorized_keys:
+        #   - your-ssh-key

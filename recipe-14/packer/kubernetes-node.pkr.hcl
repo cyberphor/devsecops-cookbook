@@ -1,49 +1,57 @@
-source "proxmox" "main" {
-  proxmox_url             = var.proxmox_api_url
-  username                = var.proxmox_api_token_id
-  token                   = var.proxmox_api_token_secret
-  node                    = var.proxmox_node
-  vm_id                   = var.vm_id
-  vm_name                 = var.vm_name
-  template_description    = var.vm_template_description
-  iso_file                = var.iso_file
-  iso_storage_pool        = var.iso_storage_pool
-  unmount_iso             = true
-  qemu_agent              = true
-  scsi_controller         = "virtio-scsi-pci"
-  disks {
-    disk_size             = var.vm_disk_size
-    format                = "qcow2"
-    storage_pool          = "local-lvm"
-    storage_pool_type     = "lvm"
-    type                  = "virtio"
+packer {
+  required_plugins {
+    name = {
+      version = "~> 1"
+      source  = "github.com/hashicorp/proxmox"
+    }
   }
-  cores                   = var.vm_cores
-  memory                  = var.vm_memory
+}
+
+source "proxmox-iso" "main" {
+  proxmox_url              = var.proxmox_api_url
+  username                 = var.proxmox_api_token_id
+  token                    = var.proxmox_api_token_secret
+  insecure_skip_tls_verify = true
+  node                     = var.proxmox_node_name
+  vm_id                    = var.vm_id
+  vm_name                  = var.vm_name
+  template_description     = var.vm_template_description
+  iso_file                 = var.iso_file
+  iso_storage_pool         = "local"
+  unmount_iso              = true
+  qemu_agent               = true
+  scsi_controller          = "virtio-scsi-pci"
+  disks {
+    disk_size              = var.vm_disk_size
+    storage_pool           = "local-lvm"
+    type                   = "virtio"
+  }
+  cores                    = var.vm_cores
+  memory                   = var.vm_memory
   network_adapters {
-    model                 = "virtio"
-    bridge                = "vmbr0"
-    firewall              = "false"
+    model                  = "virtio"
+    bridge                 = "vmbr0"
+    firewall               = "false"
   } 
-  cloud_init              = true
-  cloud_init_storage_pool = "local-lvm"
-  boot_command            = [
-    "<esc><wait><esc><wait>",
-    "<f6><wait><esc><wait>",
-    "<bs><bs><bs><bs><bs>",
-    "autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ",
-    "--- <enter>"
+  cloud_init               = true
+  cloud_init_storage_pool  = "local-lvm"
+  boot                     = "c"
+  boot_wait                = "5s"
+  boot_command             = [
+    "c<wait>",
+    "linux /casper/vmlinuz --- autoinstall ",
+    "ds='nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/'<enter>",
+    "<wait3s>initrd /casper/initrd <enter>",
+    "<wait3s>boot <enter>",
   ]
-  boot                    = "c"
-  boot_wait               = "5s"
-  http_directory          = "http" 
-  ssh_username            = var.admin_username
-  ssh_timeout             = "20m"
+  http_directory           = "http" 
+  ssh_username             = var.admin_username
+  ssh_timeout              = "20m"
 }
 
 build {
-  sources                 = [ "source.proxmox.main" ]
-  name                    = var.vm_name
+  sources                  = [ "source.proxmox-iso.main" ]
+  name                     = var.vm_name
   # prepare virtual machine template for cloud-init integration
   provisioner "shell" {
     inline = [
@@ -82,7 +90,7 @@ build {
       "sudo snap install kubelet --classic",
       "sudo snap install kubectl --classic",
       "sudo swapoff -a",
-      "sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab"
+      "sudo sed -i '/ swap / s/^\\(.*\\)$/#\\1/g' /etc/fstab"
     ]
   }
 }

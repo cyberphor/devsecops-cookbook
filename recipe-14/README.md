@@ -8,4 +8,24 @@
 
 **Step 4.** Create an API token for the `root` user (uncheck the "Privilege Separation" box). 
 
-**Step 3.** Add the API token information to the `secrets.pkr.hcl` file. 
+**Step 5.** Add the API token information to the `secrets.pkrvars.hcl` file. 
+
+**Step 6.** Initialize the `packer` directory for Packer-use.
+```bash
+packer init packer/
+```
+
+**Step 7.** Validate your Packer configuration.
+```bash
+packer validate -var-file="secrets.pkrvars.hcl" .
+```
+
+You should get output similar to below. 
+```
+The configuration is valid.
+```
+
+**Step 8.** Validate your Packer configuration.
+```bash
+packer build -var-file="secrets.pkrvars.hcl" .
+```

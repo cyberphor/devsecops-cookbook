@@ -5,12 +5,7 @@ variable "admin_username" {
 
 variable "iso_file" {
   type = string
-  default = "local:iso/ubuntu-24.04-live-server-amd64.iso"
-}
-
-variable "iso_storage_pool" {
-  type = string
-  default = "local"
+  default = "local:iso/ubuntu-22.04.4-live-server-amd64.iso"
 }
 
 variable "proxmox_api_token_id" {
@@ -36,11 +31,6 @@ variable "proxmox_node_name" {
   default = "hypervisor-01"
 }
 
-variable "template_vm_description" {
-  type = string
-  default = "Ubuntu Server w/Kubernetes pre-installed"
-}
-
 variable "vm_cores" {
   type = string
   default = "2"
@@ -51,6 +41,11 @@ variable "vm_disk_size" {
   default = "20G"
 }
 
+variable "vm_id" {
+  type = string
+  default = "100"
+}
+
 variable "vm_memory" {
   type = string
   default = "4096"
@@ -59,4 +54,9 @@ variable "vm_memory" {
 variable "vm_name" {
   type = string
   default = "kubernetes-node"
+}
+
+variable "vm_template_description" {
+  type = string
+  default = "Ubuntu Server w/Kubernetes pre-installed"
 }
