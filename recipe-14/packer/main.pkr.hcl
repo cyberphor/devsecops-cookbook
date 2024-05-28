@@ -38,15 +38,15 @@ source "proxmox-iso" "main" {
   ssh_username             = var.vm_admin_username
   ssh_password             = var.vm_admin_password
   cloud_init_storage_pool  = "local-lvm" # specify where to store the Cloud-Init CDROM
-  cloud_init               = true       # add an empty Cloud-Init CDROM drive after the virtual machine has been converted to a template
+  cloud_init               = true        # add an empty Cloud-Init CDROM drive after the virtual machine has been converted to a template
 }
 
 build {
   sources                  = [ "source.proxmox-iso.main" ]
-  #provisioner "ansible" {
-  #  playbook_file          = "../ansible/playbook.yaml"
-  #  extra_arguments = [
-  #    "--scp-extra-args", "'-O'"
-  #  ]
-  #}
+  provisioner "ansible" {
+    playbook_file          = "../ansible/playbook.yaml"
+    extra_arguments = [
+      "--scp-extra-args", "'-O'"
+    ]
+  }
 }

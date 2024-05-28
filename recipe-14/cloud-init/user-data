@@ -4,6 +4,8 @@ autoinstall:
   locale: en_US
   keyboard:
     layout: us
+  identity:
+    hostname: k8s-node
   storage:
     layout:
       name: direct
