@@ -15,9 +15,9 @@ source "proxmox-iso" "main" {
   memory                   = var.vm_memory
   scsi_controller          = "virtio-scsi-pci"
   disks {
+    type                   = "virtio"
     disk_size              = var.vm_disk_size
     storage_pool           = "local-lvm"
-    type                   = "virtio"
   }
   network_adapters {
     model                  = "virtio"
