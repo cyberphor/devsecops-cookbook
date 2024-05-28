@@ -2,7 +2,7 @@ resource "proxmox_vm_qemu" "controller" {
   target_node     = var.proxmox_node_name
   clone           = var.vm_template_name
   vmid            = 200
-  name            = "controller"
+  name            = "k8s-controller"
   agent           = 1 # enable the QEMU agent service
   cpu             = "host"
   sockets         = 1
@@ -26,7 +26,7 @@ resource "proxmox_vm_qemu" "worker_01" {
   target_node     = var.proxmox_node_name
   clone           = var.vm_template_name
   vmid            = 201
-  name            = "worker-01"
+  name            = "k8s-worker-01"
   agent           = 1 # enable the QEMU agent service
   cpu             = "host"
   sockets         = 1
@@ -50,7 +50,7 @@ resource "proxmox_vm_qemu" "worker_02" {
   target_node     = var.proxmox_node_name
   clone           = var.vm_template_name
   vmid            = 202
-  name            = "worker-02"
+  name            = "k8s-worker-02"
   agent           = 1 # enable the QEMU agent service
   cpu             = "host"
   sockets         = 1
