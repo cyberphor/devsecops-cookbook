@@ -35,10 +35,8 @@ variable "vm_image_version" {
 
 variable "vm_admin_username" {
   type    = string
-  default = "victor"
 }
 
 variable "vm_admin_password" {
   type    = string
-  default = "Password123!"
 }
