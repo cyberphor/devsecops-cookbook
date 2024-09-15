@@ -1,21 +1,20 @@
 ## DevOps Cookbook
-| Recipe                            | Description                                                                | 
-| --------------------------------- | -------------------------------------------------------------------------- |
-| [Recipe 01](/recipe-01/README.md) | Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH.
-| [Recipe 02](/recipe-02/README.md) | Create a Windows 11 and Server 2022 Vagrant box using Packer.
-| [Recipe 03](/recipe-03/README.md) | Create a publicly accessible Linux virtual machine in Azure using Terraform.
-| [Recipe 04](/recipe-04/README.md) | Create and configure a publicly accessible Linux virtual machine in Azure using Terraform and Ansible.
-| [Recipe 05](/recipe-05/README.md) | Create a Windows 11 and Server 2022 Vagrant box using Packer.
-| [Recipe 06](/recipe-06/README.md) | Using Terraform, deploy a containerized application to Azure Container Instances and a Python-based serverless function to Azure Functions (the containerized application is a Minecraft Server while the serverless function can start and stop the application).
-| [Recipe 07](/recipe-07/README.md) | Create and configure a publicly accessible Windows virtual machine in Azure using Terraform and Ansible.
-| [Recipe 08](/recipe-08/README.md) | Create a Data Flow Diagram using Markdown and Mermaid.
-| [Recipe 09](/recipe-09/README.md) | (work-in-progress) Deploy an OpenTelemetry Agent and OpenTelemetry Collector. 
-| [Recipe 10](/recipe-10/README.md) | (work-in-progress) Add observability and security to an Azure Kubernetes Service (AKS) instance using OpenTelemetry and Elastic.
-| [Recipe 11](/recipe-11/README.md) | (work-in-progress) GitHub Actions Workflows.
-| [Recipe 12](/recipe-12/README.md) | (work-in-progress) Tekton. 
-| [Recipe 13](/recipe-12/README.md) | (work-in-progress) OpenStack.
-| [Recipe 14](/recipe-14/README.md) | (work-in-progress) Create a Proxmox-based Kubernetes Node Virtual Machine Template Using Packer.
-| [Recipe 15](/recipe-15/) | Create three Linux virtual machines in Azure using Terraform.
+### Recipes
+* [Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH](/recipe-01/)
+* [Create a Windows 11 and Server 2022 Vagrant box using Packer](/recipe-02/)
+* [Create a publicly accessible Linux virtual machine in Azure using Terraform](/recipe-03/)
+* [Create and configure a publicly accessible Linux virtual machine in Azure using Terraform and Ansible](/recipe-04/)
+* [Create a Windows 11 and Server 2022 Vagrant box using Packer](/recipe-05/)
+* [Using Terraform, deploy a containerized application to Azure Container Instances and a Python-based serverless function to Azure Functions (the containerized application is a Minecraft Server while the serverless function can start and stop the application)](/recipe-06/)
+* [Create and configure a publicly accessible Windows virtual machine in Azure using Terraform and Ansible](/recipe-07/)
+* [Create a Data Flow Diagram using Markdown and Mermaid](/recipe-08/)
+* [Deploy an OpenTelemetry Agent and OpenTelemetry Collector](/recipe-09/) 
+* [Add observability and security to an Azure Kubernetes Service (AKS) instance using OpenTelemetry and Elastic](/recipe-10/)
+* [GitHub Actions Workflows](/recipe-11/)
+* [Tekton](/recipe-12/)
+* [OpenStack](/recipe-13/)
+* [Create a Proxmox-based Kubernetes Node Virtual Machine Template Using Packer](/recipe-14/)
+* [Create three Linux virtual machines in Azure using Terraform](/recipe-15/)
 
 ### Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)
