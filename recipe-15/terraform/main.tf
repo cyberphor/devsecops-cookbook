@@ -80,6 +80,10 @@ resource "azurerm_linux_virtual_machine" "main" {
   disable_password_authentication = false
   admin_username                  = var.vm_admin_username
   admin_password                  = var.vm_admin_password
+  admin_ssh_key {
+    username                      = var.vm_admin_username
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
   os_disk {
     caching                       = "ReadWrite"
     storage_account_type          = "Standard_LRS"

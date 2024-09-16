@@ -1,0 +1,62 @@
+---
+- hosts: all
+  tasks:
+    - name: Disable swap
+      become: true
+      ansible.builtin.shell: |
+        swapoff -a
+    - name: Update the apt package index
+      become: true
+      ansible.builtin.shell: |
+        apt update
+    - name: Install Docker
+      become: true
+      ansible.builtin.shell: |
+        apt install docker.io -y
+    - name: Configure the cgroup driver
+      become: true
+      ansible.builtin.shell: |
+        cat <<EOF | tee /etc/docker/daemon.json
+        {
+          "exec-opts": ["native.cgroupdriver=systemd"],
+          "log-driver": "json-file",
+          "log-opts": {
+            "max-size": "100m"
+          },
+          "storage-driver": "overlay2"
+        }
+        EOF
+        systemctl enable docker
+        systemctl daemon-reload
+        systemctl restart docker
+    - name: Install packages needed to use the Kubernetes apt repository
+      become: true
+      ansible.builtin.shell: |
+        apt install apt-transport-https ca-certificates curl gnupg -y
+    - name: Create a directory for apt keyrings
+      become: true
+      ansible.builtin.file:
+        state: directory
+        path: /etc/apt/keyrings
+        mode: '0755'
+    - name: Download the public signing key for the Kubernetes apt repository
+      ansible.builtin.shell: |
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    - name: Add the Kubernetes apt repository
+      ansible.builtin.shell:
+        echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    - name: Update the apt package index again
+      become: true
+      ansible.builtin.shell: |
+        apt update
+    - name: Install kubelet, kubeadm, and kubectl
+      become: true
+      ansible.builtin.shell: |
+        apt install kubelet kubeadm kubectl -y
+    - name: Pin the kubelet, kubeadm, and kubectl versions
+      ansible.builtin.shell: |
+        sudo apt-mark hold kubeadm kubectl kubelet
+    - name: Enable the kubelet service
+      become: true
+      ansible.builtin.shell: |
+        systemctl enable --now kubelet
