@@ -68,3 +68,4 @@ rm -rf .terraform && rm .terraform* && rm *.tfstate
 ## References
 * [Grafana: Azure Monitor data source](https://grafana.com/docs/grafana/latest/datasources/azure-monitor/)
 * [Microsoft Kusto Tutorial: Learn common operators](https://learn.microsoft.com/en-us/kusto/query/tutorials/learn-common-operators?view=microsoft-fabric)
+* [Hashicorp (YouTube): Terraforming Grafana for next-gen dashboards](https://youtu.be/qGdGMnQ83SA?si=8ujM0IACCRUY3iZr)
