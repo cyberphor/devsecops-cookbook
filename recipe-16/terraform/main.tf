@@ -48,7 +48,7 @@ module "LogAnalyticsWorkspace" {
     name                     = module.names.resources["law"]
     sku                      = "PerGB2018"
     retention_in_days        = 730
-    grafana_managed_identity = "f3809164-ec07-41a6-a1f6-8a4a1c867505"
+    grafana_managed_identity = "f3809164-ec07-41a6-a1f6-8a4a1c867505" // TODO: replace with a Service Principal.
     source                   = "./modules/LogAnalyticsWorkspace"
 }
 

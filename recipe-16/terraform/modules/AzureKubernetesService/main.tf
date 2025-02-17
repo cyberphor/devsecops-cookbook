@@ -1,4 +1,3 @@
-
 resource "azurerm_kubernetes_cluster" "main" {
     location            = var.region
     resource_group_name = var.resource_group

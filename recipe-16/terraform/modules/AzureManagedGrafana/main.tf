@@ -7,9 +7,9 @@ terraform {
     }
 }
 
-// TODO: app registration
+// TODO: add an App Registration resource.
 
-// TODO: service principal
+// TODO: add a Service Principal resource.
 
 resource "azurerm_dashboard_grafana" "main" {
     location                             = var.region
@@ -23,7 +23,7 @@ resource "azurerm_dashboard_grafana" "main" {
         resource_id = var.amw_id
     }
     identity {
-        type = "SystemAssigned" // TODO: replace with service principal
+        type = "SystemAssigned" // TODO: replace with the Service Principal resource mentioned above.
     }
 }
 
