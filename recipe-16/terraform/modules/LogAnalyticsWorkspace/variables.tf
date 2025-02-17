@@ -17,3 +17,7 @@ variable "sku" {
 variable "retention_in_days" {
     type = number
 }
+
+variable "grafana_managed_identity" {
+    type = string
+}

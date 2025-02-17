@@ -1,4 +1,4 @@
-## DevOps Cookbook
+## DevSecOps Cookbook
 ### Recipes
 * [Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH](/recipe-01/)
 * [Create a Windows 11 and Server 2022 Vagrant box using Packer](/recipe-02/)
@@ -15,6 +15,8 @@
 * [OpenStack](/recipe-13/)
 * [Create a Proxmox-based Kubernetes Node Virtual Machine Template Using Packer](/recipe-14/)
 * [Create three Linux virtual machines in Azure using Terraform](/recipe-15/)
+* [Dashboards-as-Code Using Terraform, Azure, and Grafana](/recipe-16/)
+* [Terraform Templating](/recipe-17/)
 
 ### Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)

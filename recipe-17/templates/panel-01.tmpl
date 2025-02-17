@@ -1,0 +1,131 @@
+{
+    "datasource": {
+      "type": "grafana-azure-monitor-datasource",
+      "uid": "fedcldh3upo1sb"
+    },
+    "fieldConfig": {
+      "defaults": {
+        "color": {
+          "mode": "thresholds"
+        },
+        "custom": {
+          "align": "left",
+          "cellOptions": {
+            "type": "auto"
+          },
+          "inspect": false
+        },
+        "mappings": [],
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {
+              "color": "green",
+              "value": null
+            },
+            {
+              "color": "red",
+              "value": 80
+            }
+          ]
+        }
+      },
+      "overrides": [
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "SourceComponent"
+          },
+          "properties": [
+            {
+              "id": "custom.width",
+              "value": 181
+            }
+          ]
+        },
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "Computer"
+          },
+          "properties": [
+            {
+              "id": "custom.width",
+              "value": 272
+            }
+          ]
+        },
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "TimeGenerated"
+          },
+          "properties": [
+            {
+              "id": "custom.width",
+              "value": 176
+            }
+          ]
+        },
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "Reason"
+          },
+          "properties": [
+            {
+              "id": "custom.width",
+              "value": 181
+            }
+          ]
+        }
+      ]
+    },
+    "gridPos": {
+      "h": 8,
+      "w": 24,
+      "x": 0,
+      "y": 0
+    },
+    "id": 1,
+    "options": {
+      "cellHeight": "sm",
+      "footer": {
+        "countRows": false,
+        "fields": "",
+        "reducer": [
+          "sum"
+        ],
+        "show": false
+      },
+      "showHeader": true,
+      "sortBy": [
+        {
+          "desc": false,
+          "displayName": "SourceComponent"
+        }
+      ]
+    },
+    "pluginVersion": "10.4.11",
+    "targets": [
+      {
+        "azureLogAnalytics": {
+          "dashboardTime": false,
+          "query": "${query}",
+          "resources": [
+            "/subscriptions/4a6c78dc-6727-431a-8ad7-xxxxxxxxxxxx/resourceGroups/AZ-FOOBAR-D/providers/Microsoft.OperationalInsights/workspaces/AZ-FOOBAR-D-LAW"
+          ],
+          "resultFormat": "logs",
+          "timeColumn": "TimeGenerated"
+        },
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "fedcldh3upo1sb"
+        },
+        "queryType": "Azure Log Analytics",
+        "refId": "A"
+      }
+    ],
+    "title": "Kube Events",
+    "type": "table"
+  }

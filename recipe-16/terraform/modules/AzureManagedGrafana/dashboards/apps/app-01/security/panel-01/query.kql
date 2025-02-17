@@ -1,0 +1,3 @@
+KubeEvents
+| where SourceComponent == 'kubelet'
+| project TimeGenerated, Message

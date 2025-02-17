@@ -21,3 +21,7 @@ variable "node_count" {
 variable "acr_id" {
     type = string
 }
+
+variable "law_id" {
+    type = string
+}
