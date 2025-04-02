@@ -149,7 +149,10 @@ sudo apt install terraform
 ### How to Install Ansible
 **Step 1.** Install Ansible.
 ```bash
-sudo python -m pip install ansible sshpass
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+sudo apt install ansible
 ```
 
 ### How to Install sqlcmd
@@ -181,7 +184,7 @@ echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-## Install Homebrew on macOS
+### Install Homebrew on macOS
 **Step 1.** Install the Command Line Tools for macOS if you haven't already. 
 ```bash
 xcode-select --install 
@@ -197,4 +200,11 @@ xcode-select --install
 **Step 4.** Run Homebrew to make sure it's working. 
 ```bash
 brew --version
+```
+
+### Install Packer
+```bash
+wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install packer
 ```

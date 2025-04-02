@@ -13,7 +13,7 @@
 * [GitHub Actions Workflows](/recipe-11/)
 * [Tekton](/recipe-12/)
 * [OpenStack](/recipe-13/)
-* [Create a Proxmox-based Kubernetes Node Virtual Machine Template Using Packer](/recipe-14/)
+* [Create and Use a Virtual Machine Template in Proxmox with Packer and Terraform](/recipe-14/)
 * [Create three Linux virtual machines in Azure using Terraform](/recipe-15/)
 * [Dashboards-as-Code Using Terraform, Azure, and Grafana](/recipe-16/)
 * [Terraform Templating](/recipe-17/)
@@ -28,6 +28,7 @@
 * [Install Terraform](/SETUP.md#how-to-install-terraform)
 * [Install Ansible](/SETUP.md#how-to-install-ansible)
 * [Install sqlcmd](/SETUP.md#how-to-install-sqlcmd)
+* [Install Packer](/SETUP.md#install-packer)
 
 ## Copyright
 This project is licensed under the terms of the [MIT license](/LICENSE).

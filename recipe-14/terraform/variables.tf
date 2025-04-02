@@ -1,27 +1,30 @@
-variable "proxmox_api_token_id" {
-  type = string
+variable "pve_api_url" {
+  type    = string
+  default = null
 }
 
-variable "proxmox_api_token_secret" {
-  type = string
+variable "pve_api_token_id" {
+  type    = string
+  default = null
+}
+
+variable "pve_api_token_secret" {
+  type      = string
+  default   = null
   sensitive = true
 }
 
-variable "proxmox_api_url" {
-  type = string
-}
-
-variable "proxmox_node_name" {
-  type = string
-  default = "hypervisor-01"
+variable "pve_target_node_name" {
+  type    = string
+  default = null 
 }
 
 variable "vm_template_name" {
-  type = string
-  default = "k8s-node"
+  type    = string
+  default = null
 }
 
 variable "vm_name" {
-  type = string
-  default = "k8s-controller"
+  type    = string
+  default = null
 }

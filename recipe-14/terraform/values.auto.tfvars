@@ -1,0 +1,7 @@
+pve_api_url          = "https://192.168.1.175:8006/api2/json"
+pve_api_token_id     = "root@pam!packer"
+pve_api_token_secret = "ced71a2c-8443-4a4c-b952-f3ee872c9440"
+pve_target_node_name = "hypervisor-01"
+vm_id                = "100"
+vm_template_name     = "ubuntu-server-22.04"
+vm_name              = "ubuntu-server-22.04"

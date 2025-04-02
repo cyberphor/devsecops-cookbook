@@ -1,3 +1,4 @@
 .env
 terraform/.terraform*
 terraform/terraform.*
+packer/values.auto.pkrvars.hcl
