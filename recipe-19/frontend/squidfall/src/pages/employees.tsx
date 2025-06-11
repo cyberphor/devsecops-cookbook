@@ -1,14 +1,13 @@
 import * as React from 'react';
-import { useRouter } from 'next/router';
+
 import { Crud } from '@toolpad/core/Crud';
-import { employeesDataSource, Employee, employeesCache } from '../../data/employees';
+import { employeesDataSource, Employee, employeesCache } from '../data/employees';
 
 
 export default function EmployeesCrudPage() {
-  const router = useRouter();
+  
 
-
-  return router.isReady ? (
+  return (
     <Crud<Employee>
       dataSource={employeesDataSource}
       dataSourceCache={employeesCache}
@@ -16,5 +15,5 @@ export default function EmployeesCrudPage() {
       initialPageSize={25}
       defaultValues={{ itemCount: 1 }}
     />
-  ) : null;
+  );
 }

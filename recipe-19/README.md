@@ -77,7 +77,7 @@ You should get output similar to below.
 11.3.0
 ```
 
-**Step 7.** Use NPX to create a new Material UI (MUI) Toolpad Core project called `squidfall`. 
+**Step 7.** Use NPX to create a new Material UI (MUI) Toolpad Core project called `squidfall`. FYI, Material UI's Toolpad Core framework uses Emotion for styling. Therefore you must add additional configuration to Emotion to implement a Content Security Policy (CSP). As long as your request headers include the right nonce, Toolpad Core's scripts and styling will be rendered. 
 ```bash
 npx create-toolpad-app@latest squidfall
 ```

@@ -2,31 +2,28 @@
   "name": "squidfall",
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "vite",
+    "preview": "vite preview",
+    "build": "vite build"
   },
   "dependencies": {
-    "react": "^19",
-    "react-dom": "^19",
-    "@toolpad/core": "0.15.0",
-    "@mui/material": "^7",
-    "@mui/material-nextjs": "^7",
-    "@mui/icons-material": "^7",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
-    "zod": "^3.24.2",
-    "next": "^15",
-    "@emotion/cache": "^11",
-    "@emotion/server": "^11"
+    "@mui/icons-material": "^7",
+    "@mui/material": "^7",
+    "@mui/material-nextjs": "^7",
+    "@toolpad/core": "0.15.0",
+    "react": "^19",
+    "react-dom": "^19",
+    "react-router": "^7.6.2",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^4.3.2",
     "eslint": "^8",
-    "eslint-config-next": "^15",
-    "@types/node": "^20"
+    "typescript": "^5",
+    "vite": "^5.4.8"
   }
 }
