@@ -1,0 +1,32 @@
+{
+  "name": "squidfall",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "react": "^19",
+    "react-dom": "^19",
+    "@toolpad/core": "0.15.0",
+    "@mui/material": "^7",
+    "@mui/material-nextjs": "^7",
+    "@mui/icons-material": "^7",
+    "@emotion/react": "^11",
+    "@emotion/styled": "^11",
+    "zod": "^3.24.2",
+    "next": "^15",
+    "@emotion/cache": "^11",
+    "@emotion/server": "^11"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "^15",
+    "@types/node": "^20"
+  }
+}
