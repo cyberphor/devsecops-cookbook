@@ -17,6 +17,7 @@
 * [Create three Linux virtual machines in Azure using Terraform](/recipe-15/)
 * [Dashboards-as-Code Using Terraform, Azure, and Grafana](/recipe-16/)
 * [Terraform Templating](/recipe-17/)
+* [Full-Stack Application (React, Material UI, Vite, Nginx, PostgreSQL, and Django) with a Content Security Policy](/recipe-19/README.md)
 
 ### Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)
