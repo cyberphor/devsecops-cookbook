@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: deny-high-cves
+  annotations:
+    policies.kyverno.io/title: Deny Images With HIGH CVEs
+spec:
+  validationFailureAction: Enforce
+  rules:
+    - name: deny-images-with-high-cves
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Image contains one or more HIGH severity CVEs."
+        foreach:
+          - list: "request.object.spec.containers"
+            context:
+              - name: imageData
+                imageRegistry:
+                  reference: "{{ element.image }}"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ imageData.vulnerabilities[].severity }}"
+                    operator: AnyIn
+                    value:
+                      - HIGH
