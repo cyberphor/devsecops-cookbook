@@ -1,32 +1,26 @@
-# policy.yml
 ---
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: deny-high-cves
-  annotations:
-    policies.kyverno.io/title: Deny Images With HIGH CVEs
+  name: block-affected-vex
 spec:
   validationFailureAction: Enforce
+  background: false
   rules:
-    - name: deny-images-with-high-cves
+    - name: check-vex-not-affected
       match:
         any:
-          - resources:
-              kinds:
-                - Pod
-      validate:
-        message: "Image contains one or more HIGH severity CVEs."
-        foreach:
-          - list: "request.object.spec.containers"
-            context:
-              - name: imageData
-                imageRegistry:
-                  reference: "{{ element.image }}"
-            deny:
+        - resources:
+            kinds:
+              - Pod
+      verifyImages:
+        - imageReferences:
+            - "*"
+          attestations:
+            - predicateType: https://openvex.dev/ns/v0.2.0
               conditions:
-                any:
-                  - key: "{{ imageData.vulnerabilities[].severity }}"
-                    operator: AnyIn
-                    value:
-                      - HIGH
+                - all:
+                    - key: "{{ attestation.payload.statements[].status }}"
+                      operator: AnyNotIn
+                      value:
+                        - affected

@@ -1,8 +1,9 @@
 ## Recipe 20: Policy-as-Code
 * [Setup](#setup)
-* [Provision a Container Registry](#provision-a-container-registry)
-* [Provision a Kubernetes Cluster](#provision-a-kubernetes-cluster)
+* [Deploy a Container Registry](#deploy-a-container-registry)
+* [Deploy a Kubernetes Cluster](#deploy-a-kubernetes-cluster)
 * [Connect the Kubernetes Cluster to the Container Registry](#connect-the-kubernetes-cluster-to-the-container-registry)
+* [Deploy a Container on the Kubernetes Cluster](#deploy-a-container-on-the-kubernetes-cluster)
 * [Create an SBOM and VEX Document](#create-an-sbom-and-vex-document)
 * [Link the SBOM and VEX Document to the Container Image](#link-the-sbom-and-vex-document-to-the-container-image)
 * [Create and Apply Kyverno Policy](#create-and-apply-kyverno-policy)
@@ -24,7 +25,7 @@ curl -sSfL https://get.anchore.io/grype | sudo sh -s -- -b /usr/local/bin
 go install github.com/openvex/vexctl@latest
 ```
 
-**Step 4.** Text goes here.
+**Step 4.** Install `cosign`.
 ```bash
 go install github.com/sigstore/cosign/v2/cmd/cosign@latest
 ```
@@ -48,15 +49,24 @@ sudo mv kyverno /usr/local/bin/
 rm kyverno-cli_v1.12.0_linux_x86_64.tar.gz
 ```
 
-## Provision a Container Registry
-**Step 1.** Start a container registry.
+**Step 8.** Initialize all the environment variables that will be used. The `REGISTRY_PORT` environment variable must be set to an port number that doesn't conflict the port Docker is listening on (i.e., you cannot use `5000`). 
 ```bash
-docker run -d -p 5000:5000 --restart=always --name demo registry:2
+export REGISTRY_NAME="demo"
+export REGISTRY_PORT="5001"
+export REGISTRY_INTERNAL_PORT="5000"
+export REGISTRY_DIR="/etc/containerd/certs.d/${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"
+export CLUSTER_NAME="demo"
 ```
 
-**Step 2.** Verify it works.
+## Deploy a Container Registry
+**Step 1.** Deploy a container registry locally called `demo` using `docker`.
 ```bash
-curl http://localhost:5000/v2/_catalog
+docker run -d -p ${REGISTRY_PORT}:5000 --restart=always --name demo registry:2
+```
+
+**Step 2.** Verify the container registry is running by querying it.
+```bash
+curl http://localhost:${REGISTRY_PORT}/v2/_catalog
 ```
 
 You should get output similar to below.
@@ -64,13 +74,28 @@ You should get output similar to below.
 {"repositories":[]}
 ```
 
-## Provision a Kubernetes Cluster
-**Step 1.** Create a Kubernetes cluster called `demo`.
+## Deploy a Kubernetes Cluster
+**Step 1.** Deploy a Kubernetes cluster called `demo` using `kind`.
 ```bash
-kind create cluster --name demo --image kindest/node:v1.34.0 --config cluster-config.yml
+cat <<EOF | kind create cluster --name ${CLUSTER_NAME} --image kindest/node:v1.34.0 --config -
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"]
+    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"]
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30000
+    hostPort: 30000
+    protocol: TCP
+- role: worker
+- role: worker
+EOF
 ```
 
-**Step 2.** Confirm the version of your Kubernetes cluster.
+**Step 2.** Confirm the version of your Kubernetes cluster is `v1.34.0` using `kubectl`.
 ```bash
 kubectl version
 ```
@@ -82,63 +107,67 @@ Kustomize Version: v5.7.1
 Server Version: v1.34.0
 ```
 
-**Step 3.** Print cluster information.
-```bash
-kubectl cluster-info
-```
-
-You should get output similar to below.
-```
-Kubernetes control plane is running at https://127.0.0.1:38167
-CoreDNS is running at https://127.0.0.1:38167/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
-
-To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
-```
-
-**Step 4.** List resources on your cluster.
-```bash
-kubectl get all --all-namespaces
-```
-
 ## Connect the Kubernetes Cluster to the Container Registry
-**Step 1.** Text goes here.
+**Step 1.** Identify the configuration your container registry's network is using. 
 ```bash
-REGISTRY_NAME="demo"
-REGISTRY_PORT="5001"
-REGISTRY_DIR="/etc/containerd/certs.d/localhost:${REGISTRY_PORT}"
-CLUSTER_NAME="demo"
+docker network inspect kind | jq ".[0].IPAM"
 ```
 
-**Step 2.** Copy the container registry configuration to each of the Kubernetes cluster nodes.
-```bash
-for NODE in $(kind get nodes --name $CLUSTER_NAME); do
-  docker exec "${NODE}" mkdir -p "${REGISTRY_DIR}"
-  cat <<EOF | docker exec -i "${NODE}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
-[host."http://${REGISTRY_NAME}:5000"]
-EOF
-done
-```
-
-**Step 3.** Connect the network the container registry is using to the Kubernetes cluster's network. 
-```bash
-if [ "$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "${REGISTRY_NAME}")" = 'null' ]; then
-  docker network connect "kind" "${REGISTRY_NAME}"
-fi
-```
-
-**Step 4.** Text goes here.
-```bash
-docker inspect -f='{{json .NetworkSettings.Networks.kind}}' demo
-```
-
-You should get output similar to below.
+You should get output similar to below. Pay special attention to the IPv4 `Subnet` field.
 ```json
-{"IPAMConfig":{},"Links":null,"Aliases":[],"MacAddress":"1a:e8:8c:69:af:f7","DriverOpts":{},"GwPriority":0,"NetworkID":"5b40da3894beeda16d4d7a753b5bb8d7b737ac3850a25b2c905d61bd208d9acd","EndpointID":"d667d12564be7cc07fff62e7112f78504bedac39bc3369b94258131d27ea6a37","Gateway":"172.18.0.1","IPAddress":"172.18.0.5","IPPrefixLen":16,"IPv6Gateway":"fc00:f853:ccd:e793::1","GlobalIPv6Address":"fc00:f853:ccd:e793::5","GlobalIPv6PrefixLen":64,"DNSNames":["demo","6d551390f684"]}
+{
+  "Driver": "default",
+  "Options": {},
+  "Config": [
+    {
+      "Subnet": "fc00:f853:ccd:e793::/64"
+    },
+    {
+      "Subnet": "172.18.0.0/16",
+      "Gateway": "172.18.0.1"
+    }
+  ]
+}
 ```
 
-**Step 5.** 
+**Step 2.** Connect your container registry network (e.g., `kind`) to your Kubernetes cluster's network. 
+```bash
+docker network connect kind ${REGISTRY_NAME}
+```
+
+**Step 3.** Inspect your container registry's network configuration for what is has with regards to your Kubernetes cluster.  
+```bash
+docker inspect demo -f='{{json .NetworkSettings.Networks}}' | jq ".kind"
+```
+
+You should get output similar to below. Specifically, you should see your container registry how has an IP address (e.g., `172.18.0.5`) in same network as your Kubernetes cluster (e.g., `172.18.0.0/16`).
+```json
+{
+  "IPAMConfig": {},
+  "Links": null,
+  "Aliases": [],
+  "MacAddress": "6e:55:cb:b8:61:11",
+  "DriverOpts": {},
+  "GwPriority": 0,
+  "NetworkID": "ad1ee06b8928b980a422a2bc75f2f255deef535b85a0fc3ca6ae6d781985abdb",
+  "EndpointID": "6a83558f05d5134ce6c7f11e747588908656056a4a845139f671b71b14f31025",
+  "Gateway": "172.18.0.1",
+  "IPAddress": "172.18.0.5",
+  "IPPrefixLen": 16,
+  "IPv6Gateway": "fc00:f853:ccd:e793::1",
+  "GlobalIPv6Address": "fc00:f853:ccd:e793::5",
+  "GlobalIPv6PrefixLen": 64,
+  "DNSNames": [
+    "demo",
+    "48178d3470ac"
+  ]
+}
+```
+
+**Step 4.** Add a ConfigMap to your Kubernetes cluster to document your container registry as a local registry hosting.
 ```bash
 cat <<EOF | kubectl apply -f -
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -157,7 +186,7 @@ configmap/local-registry-hosting created
 ```
 
 ## Create an SBOM and VEX Document
-**Step 1.** Create an SBOM.
+**Step 1.** Create an SBOM for a container image using `syft`.
 ```bash
 syft vulnerables/web-dvwa -o cyclonedx-json=sbom.json
 ```
@@ -173,7 +202,7 @@ You should get output similar to below.
    └── ✔ File digests                    [9,458 files]
 ```
 
-**Step 2.** Scan an SBOM.
+**Step 2.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
 ```bash
 grype sbom:sbom.json -o cyclonedx-json=scan.json
 ```
@@ -184,7 +213,7 @@ You should get output similar to below. Note the number of vulnerability matches
    ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
 ```
 
-**Step 3.** Review the CVEs identified. 
+**Step 3.** Review the CVEs reported by `grype`. 
 ```bash
 cat scan.json | jq '.vulnerabilities'
 ```
@@ -228,7 +257,7 @@ You should get output similar to below.
 > VEX document written to vex.json
 ```
 
-**Step 6.** Using the VEX document as additional input, scan the SBOM again to verify the CVE is suppressed. 
+**Step 6.** Using the VEX document as additional input, scan the SBOM again to verify the CVE gets suppressed. 
 ```bash
 grype sbom:sbom.json --vex=vex.json -o cyclonedx-json=scan-2.json
 ```
@@ -242,17 +271,17 @@ You should get output similar to below. As you will see, the number of vulnerabi
 ## Create an OCI Artifact that Links the SBOM and VEX Documents to the Container Image
 **Step 1.** Text goes here. 
 ```bash
-docker tag vulnerables/web-dvwa:latest localhost:5000/web-dvwa:latest
+docker tag vulnerables/web-dvwa:latest localhost:${REGISTRY_PORT}/web-dvwa:latest
 ```
 
 **Step 2.** Text goes here.
 ```bash
-docker push localhost:5000/web-dvwa:latest
+docker push localhost:${REGISTRY_PORT}/web-dvwa:latest
 ```
 
 You should get output similar to below.
 ```
-The push refers to repository [localhost:5000/web-dvwa]
+The push refers to repository [localhost:5001/web-dvwa]
 deeea3c4d56f: Pushed 
 585e40f29c46: Pushed 
 73e92d5f2a6c: Pushed 
@@ -266,29 +295,155 @@ latest: digest: sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f
 
 **Step 3.** Text goes here.
 ```bash
-docker inspect --format='{{index .RepoDigests 0}}' localhost:5000/web-dvwa:latest
+curl http://localhost:${REGISTRY_PORT}/v2/_catalog
+```
+
+You should get output similar to below.
+```json
+{"repositories":["web-dvwa"]}
 ```
 
 **Step 4.** Text goes here.
 ```bash
-cosign attach sbom --sbom sbom.json localhost:5000/web-dvwa@sha256:abc...xyz
+docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:latest
+```
+
+You should get output similar to below.
+```
+vulnerables/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 ```
 
 **Step 5.** Text goes here.
 ```bash
-cosign attach attestation --type openvex --predicate vex.json localhost:5000/web-dvwa@sha256:abc...xyz
+export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:latest | cut -d":" -f2)
 ```
 
 **Step 6.** Text goes here.
 ```bash
-cosign tree localhost:5000/web-dvwa@sha256:<digest>
+cosign attest \
+  --type spdxjson \
+  --predicate sbom.json \
+  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
-## Deploy the Container Image
+**Step 7.** Text goes here.
+```bash
+cosign attest \
+  --type openvex \
+  --predicate vex.json \
+  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+**Step 8.** Text goes here.
+```bash
+cosign tree localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+You should get output similar to below.
+```
+📦 Supply Chain Security Related artifacts for an image: localhost:5001/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
+└── 💾 Attestations for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.att
+   ├── 🍒 sha256:6facf4be3fd99ddee17147823415412078588c531e022a991f8bef6814195430
+   └── 🍒 sha256:d4e42bddc08f80527d3b31ddc9ec2d5142005011c26adae4ab58294e63701b5d
+```
+
+## Deploy a Container on the Kubernetes Cluster
 **Step 1.** Text goes here.
 ```bash
-kubectl apply -f pod.yaml
+cat <<EOF | kubectl apply -f -
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-pod
+  labels:
+    app: dvwa
+spec:
+  containers:
+  - name: dvwa
+    image: ${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}/web-dvwa:latest
+EOF
 ```
+
+**Step 2.** Text goes here.
+```bash
+kubectl describe pod demo-pod
+```
+
+You should get output similar to below.
+```yaml
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             demo-worker2/172.18.0.2
+Start Time:       Sun, 08 Feb 2026 21:06:49 -0500
+Labels:           app=dvwa
+Annotations:      <none>
+Status:           Running
+IP:               10.244.1.3
+IPs:
+  IP:  10.244.1.3
+Containers:
+  dvwa:
+    Container ID:   containerd://b25c3517ab33e026bb9cfbdfd0fc82863c55b1730f46cef3871de9e014cd6d7c
+    Image:          demo:5000/web-dvwa:latest
+    Image ID:       demo:5000/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Sun, 08 Feb 2026 21:06:49 -0500
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-r7jc9 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-r7jc9:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  15s   default-scheduler  Successfully assigned default/demo-pod to demo-worker2
+  Normal  Pulling    15s   kubelet            spec.containers{dvwa}: Pulling image "demo:5000/web-dvwa:latest"
+  Normal  Pulled     15s   kubelet            spec.containers{dvwa}: Successfully pulled image "demo:5000/web-dvwa:latest" in 126ms (126ms including waiting). Image size: 178370991 bytes.
+  Normal  Created    15s   kubelet            spec.containers{dvwa}: Created container: dvwa
+  Normal  Started    15s   kubelet            spec.containers{dvwa}: Started container dvwa
+```
+
+**Step 3.** Text goes here.
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-service
+spec:
+  type: NodePort
+  selector:
+    app: dvwa
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30000
+EOF
+```
+
+**Step 4.** Open a browser to [http://localhost:30000](http://localhost:30000).
 
 ## Create and Apply Kyverno Policy
 **Step 1.** Install Kyverno on the Kubernetes cluster.
@@ -296,11 +451,9 @@ kubectl apply -f pod.yaml
 kubectl create -f https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml
 ```
 
-**Step 2.** Create a cluster policy.
-
-**Step 3.** Apply the cluster policy.
+**Step 2.** Apply a Kyverno policy to the Kubernetes cluster.
 ```bash
-kyverno apply policy.yml --cluster
+kubectl apply -f policy.yml
 ```
 
 You should get output similar to below.

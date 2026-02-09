@@ -1,9 +1,0 @@
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: demo
-spec:
-  containers:
-  - name: dvwa
-    image: localhost:5000/web-dvwa:latest
