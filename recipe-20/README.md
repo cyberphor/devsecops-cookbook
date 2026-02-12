@@ -1,11 +1,13 @@
 ## Recipe 20: Policy-as-Code
 * [Setup](#setup)
+* [Initialize Your Environment Variables](#initialize-your-environment-variables)
 * [Deploy a Container Registry](#deploy-a-container-registry)
 * [Deploy a Kubernetes Cluster](#deploy-a-kubernetes-cluster)
 * [Connect the Kubernetes Cluster to the Container Registry](#connect-the-kubernetes-cluster-to-the-container-registry)
-* [Deploy a Container on the Kubernetes Cluster](#deploy-a-container-on-the-kubernetes-cluster)
 * [Create an SBOM and VEX Document](#create-an-sbom-and-vex-document)
-* [Link the SBOM and VEX Document to the Container Image](#link-the-sbom-and-vex-document-to-the-container-image)
+* [Tag and Pug the Container Image to the Container Registry](#tag-and-pug-the-container-image-to-the-container-registry)
+* [Create Attestations that Link the SBOM and VEX Documents to the Container Image](#create-attestations-that-link-the-sbom-and-vex-documents-to-the-container-image)
+* [Deploy a Container on the Kubernetes Cluster](#deploy-a-container-on-the-kubernetes-cluster)
 * [Create and Apply Kyverno Policy](#create-and-apply-kyverno-policy)
 * [References](#references)
 
@@ -20,28 +22,38 @@ curl -sSfL https://get.anchore.io/syft | sudo sh -s -- -b /usr/local/bin
 curl -sSfL https://get.anchore.io/grype | sudo sh -s -- -b /usr/local/bin
 ```
 
-**Step 3.** Install `vexctl`.
+**Step 3.** Install `go`.
+```bash
+wget https://go.dev/dl/go1.26.0.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.26.0.linux-amd64.tar.gz
+rm go1.26.0.linux-amd64.tar.gz
+```
+
+**Step 4.** Install `vexctl`.
 ```bash
 go install github.com/openvex/vexctl@latest
 ```
 
-**Step 4.** Install `cosign`.
+**Step 5.** Install `cosign`.
 ```bash
 go install github.com/sigstore/cosign/v2/cmd/cosign@latest
 ```
 
-**Step 5.** Install `kubectl`.
+**Step 6.** Install `docker` using [instructions online](https://docs.docker.com/engine/install).
+
+**Step 7.** Install `kubectl`.
 ```bash
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 ```
 
-**Step 6.** Install `kind`.
+**Step 8.** Install `kind`.
 ```bash
 go install sigs.k8s.io/kind@v0.31.0
 ```
 
-**Step 7.** Install the Kyverno CLI.
+**Step 9.** Install the Kyverno CLI.
 ```bash
 curl -LO https://github.com/kyverno/kyverno/releases/download/v1.12.0/kyverno-cli_v1.12.0_linux_x86_64.tar.gz
 tar -xvf kyverno-cli_v1.12.0_linux_x86_64.tar.gz
@@ -49,19 +61,20 @@ sudo mv kyverno /usr/local/bin/
 rm kyverno-cli_v1.12.0_linux_x86_64.tar.gz
 ```
 
-**Step 8.** Initialize all the environment variables that will be used. The `REGISTRY_PORT` environment variable must be set to an port number that doesn't conflict the port Docker is listening on (i.e., you cannot use `5000`). 
+## Initialize Your Environment Variables
+**Step 1.** Initialize all the environment variables that will be used. The `REGISTRY_PORT` environment variable must be set to an port number that doesn't conflict the port Docker is listening on (i.e., you cannot use `5000`). 
 ```bash
-export REGISTRY_NAME="demo"
+export REGISTRY_NAME="demo-registry"
 export REGISTRY_PORT="5001"
 export REGISTRY_INTERNAL_PORT="5000"
 export REGISTRY_DIR="/etc/containerd/certs.d/${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"
-export CLUSTER_NAME="demo"
+export CLUSTER_NAME="demo-cluster"
 ```
 
 ## Deploy a Container Registry
-**Step 1.** Deploy a container registry locally called `demo` using `docker`.
+**Step 1.** Deploy a container registry locally called using `docker`.
 ```bash
-docker run -d -p ${REGISTRY_PORT}:5000 --restart=always --name demo registry:2
+docker run -d -p ${REGISTRY_PORT}:5000 --restart=always --name $REGISTRY_NAME registry:2
 ```
 
 **Step 2.** Verify the container registry is running by querying it.
@@ -268,13 +281,13 @@ You should get output similar to below. As you will see, the number of vulnerabi
    ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
 ```
 
-## Create an OCI Artifact that Links the SBOM and VEX Documents to the Container Image
-**Step 1.** Text goes here. 
+## Tag and Pug the Container Image to the Container Registry
+**Step 1.** Tag the container image. 
 ```bash
 docker tag vulnerables/web-dvwa:latest localhost:${REGISTRY_PORT}/web-dvwa:latest
 ```
 
-**Step 2.** Text goes here.
+**Step 2.** Push the container image to your container registry. 
 ```bash
 docker push localhost:${REGISTRY_PORT}/web-dvwa:latest
 ```
@@ -293,7 +306,7 @@ a75caa09eb1f: Pushed
 latest: digest: sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7 size: 1997
 ```
 
-**Step 3.** Text goes here.
+**Step 3.** Query your container registry to confirm your container image has been uploaded. 
 ```bash
 curl http://localhost:${REGISTRY_PORT}/v2/_catalog
 ```
@@ -303,22 +316,13 @@ You should get output similar to below.
 {"repositories":["web-dvwa"]}
 ```
 
-**Step 4.** Text goes here.
-```bash
-docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:latest
-```
-
-You should get output similar to below.
-```
-vulnerables/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
-```
-
-**Step 5.** Text goes here.
+## Create Attestations that Link the SBOM and VEX Documents to the Container Image
+**Step 1.** Save the digest of the container image to an environment variable called `DIGEST`.
 ```bash
 export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:latest | cut -d":" -f2)
 ```
 
-**Step 6.** Text goes here.
+**Step 2.** Create an attestation in the container registry, using `cosign`, that links the SBOM (e.g., `sbom.json`) to the container.image. 
 ```bash
 cosign attest \
   --type spdxjson \
@@ -326,7 +330,7 @@ cosign attest \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
-**Step 7.** Text goes here.
+**Step 3.** Create an attestation in the container registry, using `cosign`, that links the VEX document (e.g., `vex.json`) to the container.
 ```bash
 cosign attest \
   --type openvex \
@@ -334,7 +338,7 @@ cosign attest \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
-**Step 8.** Text goes here.
+**Step 4.** Confirm the attestations exist for the container image in the container registry.
 ```bash
 cosign tree localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
@@ -348,7 +352,7 @@ You should get output similar to below.
 ```
 
 ## Deploy a Container on the Kubernetes Cluster
-**Step 1.** Text goes here.
+**Step 1.** Deploy a workload on your Kubernetes cluster that uses your container image. 
 ```bash
 cat <<EOF | kubectl apply -f -
 ---
@@ -365,7 +369,7 @@ spec:
 EOF
 ```
 
-**Step 2.** Text goes here.
+**Step 2.** Check on the health of the workload using the command below. 
 ```bash
 kubectl describe pod demo-pod
 ```
@@ -425,7 +429,7 @@ Events:
   Normal  Started    15s   kubelet            spec.containers{dvwa}: Started container dvwa
 ```
 
-**Step 3.** Text goes here.
+**Step 3.** Add a service resource to your workload so you can access your container image from your host OS. 
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -443,7 +447,7 @@ spec:
 EOF
 ```
 
-**Step 4.** Open a browser to [http://localhost:30000](http://localhost:30000).
+**Step 4.** Open a browser to [http://localhost:30000](http://localhost:30000) and confirm you're able to interact with the workload.
 
 ## Create and Apply Kyverno Policy
 **Step 1.** Install Kyverno on the Kubernetes cluster.
