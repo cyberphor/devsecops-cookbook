@@ -10,17 +10,17 @@ spec:
     - name: check-vex-not-affected
       match:
         any:
-        - resources:
-            kinds:
-              - Pod
+          - resources:
+              kinds:
+                - Pod
       verifyImages:
         - imageReferences:
             - "*"
           attestations:
-            - predicateType: https://openvex.dev/ns/v0.2.0
+            - type: https://openvex.dev/ns/v0.2.0
               conditions:
                 - all:
                     - key: "{{ attestation.payload.statements[].status }}"
-                      operator: AnyNotIn
+                      operator: AllNotIn
                       value:
                         - affected

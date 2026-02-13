@@ -48,12 +48,21 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 ```
 
-**Step 8.** Install `kind`.
+**Step 8.** Install `helm`.
+```bash
+sudo apt-get install curl gpg apt-transport-https --yes
+curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+```
+
+**Step 9.** Install `kind`.
 ```bash
 go install sigs.k8s.io/kind@v0.31.0
 ```
 
-**Step 9.** Install the Kyverno CLI.
+**Step 10.** Install the Kyverno CLI.
 ```bash
 curl -LO https://github.com/kyverno/kyverno/releases/download/v1.12.0/kyverno-cli_v1.12.0_linux_x86_64.tar.gz
 tar -xvf kyverno-cli_v1.12.0_linux_x86_64.tar.gz
@@ -74,7 +83,7 @@ export CLUSTER_NAME="demo-cluster"
 ## Deploy a Container Registry
 **Step 1.** Deploy a container registry locally called using `docker`.
 ```bash
-docker run -d -p ${REGISTRY_PORT}:5000 --restart=always --name $REGISTRY_NAME registry:2
+docker run -d -p ${REGISTRY_PORT}:5000 --restart=always --name $REGISTRY_NAME registry:3
 ```
 
 **Step 2.** Verify the container registry is running by querying it.
@@ -150,7 +159,7 @@ docker network connect kind ${REGISTRY_NAME}
 
 **Step 3.** Inspect your container registry's network configuration for what is has with regards to your Kubernetes cluster.  
 ```bash
-docker inspect demo -f='{{json .NetworkSettings.Networks}}' | jq ".kind"
+docker inspect ${REGISTRY_NAME} -f='{{json .NetworkSettings.Networks}}' | jq ".kind"
 ```
 
 You should get output similar to below. Specifically, you should see your container registry how has an IP address (e.g., `172.18.0.5`) in same network as your Kubernetes cluster (e.g., `172.18.0.0/16`).
@@ -316,6 +325,16 @@ You should get output similar to below.
 {"repositories":["web-dvwa"]}
 ```
 
+**Step 4.** Query your container registry to confirm which container image version was been uploaded. 
+```bash
+curl http://localhost:5001/v2/web-dvwa/tags/list
+```
+
+You should get output similar to below.
+```json
+{"name":"web-dvwa","tags":["latest"]}
+```
+
 ## Create Attestations that Link the SBOM and VEX Documents to the Container Image
 **Step 1.** Save the digest of the container image to an environment variable called `DIGEST`.
 ```bash
@@ -462,9 +481,7 @@ kubectl apply -f policy.yml
 
 You should get output similar to below.
 ```
-Applying 3 policy rule(s) to 37 resource(s)...
-
-pass: 37, fail: 0, warn: 0, error: 0, skip: 0 
+clusterpolicy.kyverno.io/block-affected-vex created
 ```
 
 **Step 4.** Test the cluster policy.
