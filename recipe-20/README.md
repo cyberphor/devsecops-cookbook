@@ -78,6 +78,7 @@ export REGISTRY_PORT="5001"
 export REGISTRY_INTERNAL_PORT="5000"
 export REGISTRY_DIR="/etc/containerd/certs.d/${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"
 export CLUSTER_NAME="demo-cluster"
+export COSIGN_INSECURE="true"
 ```
 
 ## Deploy a Container Registry
@@ -106,6 +107,8 @@ containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"]
     endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"]
+  [plugins."io.containerd.grpc.v1.cri".registry.configs."${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}".tls]
+    insecure_skip_verify = true
 nodes:
 - role: control-plane
   extraPortMappings:
@@ -152,7 +155,7 @@ You should get output similar to below. Pay special attention to the IPv4 `Subne
 }
 ```
 
-**Step 2.** Connect your container registry network (e.g., `kind`) to your Kubernetes cluster's network. 
+**Step 2.** Connect your container registry network (e.g., `kind`) to your Kubernetes cluster's network. Do not skip this step or your Kubernetes cluster will not be able to resolve the hostname of your container registry.
 ```bash
 docker network connect kind ${REGISTRY_NAME}
 ```
@@ -184,27 +187,6 @@ You should get output similar to below. Specifically, you should see your contai
     "48178d3470ac"
   ]
 }
-```
-
-**Step 4.** Add a ConfigMap to your Kubernetes cluster to document your container registry as a local registry hosting.
-```bash
-cat <<EOF | kubectl apply -f -
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: local-registry-hosting
-  namespace: kube-public
-data:
-  localRegistryHosting.v1: |
-    host: "localhost:${REGISTRY_PORT}"
-    help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
-EOF
-```
-
-You should get output similar to below.
-```bash
-configmap/local-registry-hosting created
 ```
 
 ## Create an SBOM and VEX Document
@@ -341,23 +323,30 @@ You should get output similar to below.
 export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:latest | cut -d":" -f2)
 ```
 
-**Step 2.** Create an attestation in the container registry, using `cosign`, that links the SBOM (e.g., `sbom.json`) to the container.image. 
+**Step 2.** Text goes here.
+```bash
+cosign generate-key-pair
+```
+
+**Step 3.** Create an attestation in the container registry, using `cosign`, that links the SBOM (e.g., `sbom.json`) to the container.image. 
 ```bash
 cosign attest \
+  --key cosign.key \
   --type spdxjson \
   --predicate sbom.json \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
-**Step 3.** Create an attestation in the container registry, using `cosign`, that links the VEX document (e.g., `vex.json`) to the container.
+**Step 4.** Create an attestation in the container registry, using `cosign`, that links the VEX document (e.g., `vex.json`) to the container.
 ```bash
 cosign attest \
+  --key cosign.key \
   --type openvex \
   --predicate vex.json \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
-**Step 4.** Confirm the attestations exist for the container image in the container registry.
+**Step 5.** Confirm the attestations exist for the container image in the container registry.
 ```bash
 cosign tree localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
@@ -366,8 +355,24 @@ You should get output similar to below.
 ```
 📦 Supply Chain Security Related artifacts for an image: localhost:5001/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 └── 💾 Attestations for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.att
-   ├── 🍒 sha256:6facf4be3fd99ddee17147823415412078588c531e022a991f8bef6814195430
-   └── 🍒 sha256:d4e42bddc08f80527d3b31ddc9ec2d5142005011c26adae4ab58294e63701b5d
+   ├── 🍒 sha256:317158b7ac4bee58a60e378a1362e76d7bf3f2386ed75cc3a47a8e630e56b695
+   └── 🍒 sha256:a51a162652a5e72e85e84dbb5539e973588bb5069f0dff0d9ff83c8857a80329
+```
+
+**Step 6.** Text goes here.
+```bash
+cosign verify-attestation \
+  --key cosign.pub \
+  --type spdxjson \
+  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+**Step 7.** Text goes here.
+```bash
+cosign verify-attestation \
+  --key cosign.pub \
+  --type openvex \
+  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
 ## Deploy a Container on the Kubernetes Cluster
@@ -471,10 +476,24 @@ EOF
 ## Create and Apply Kyverno Policy
 **Step 1.** Install Kyverno on the Kubernetes cluster.
 ```bash
-kubectl create -f https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml
+kubectl create -f https://github.com/kyverno/kyverno/releases/download/v1.17.0/install.yaml
 ```
 
-**Step 2.** Apply a Kyverno policy to the Kubernetes cluster.
+**Step 2.** Wait for the Kyverno pods to start. 
+```bash
+kubectl -n kyverno get pods
+```
+
+You should eventually see output similar to below.
+```
+NAME                                            READY   STATUS    RESTARTS   AGE
+kyverno-admission-controller-5f9fb8dcb8-2cv4n   1/1     Running   0          3m59s
+kyverno-background-controller-79b78db6b-gfmst   1/1     Running   0          3m59s
+kyverno-cleanup-controller-6bcc48b5-c29rm       1/1     Running   0          3m59s
+kyverno-reports-controller-5dbc78665-b7brp      1/1     Running   0          3m59s
+```
+
+**Step 3.** Apply a Kyverno policy to the Kubernetes cluster.
 ```bash
 kubectl apply -f policy.yml
 ```
