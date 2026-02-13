@@ -1,3 +1,4 @@
+---
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -15,17 +16,19 @@ spec:
       verifyImages:
         - imageReferences:
             - "*"
-          attestors:
-            - entries:
-                - keys:
-                    publicKeys: |
-                      -----BEGIN PUBLIC KEY-----
-                      -----END PUBLIC KEY-----
           attestations:
-            - predicateType: https://openvex.dev/ns
+            - type: https://openvex.dev/ns/v0.2.0
+              attestors:
+                - entries:
+                    - keys:
+                        publicKeys: |-
+                          -----BEGIN PUBLIC KEY-----
+                          MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEna//7ufUycLQocpYtWQEhMKsOO68
+                          1xq66kaVhjv4wi6mcLjpMhApA0U+RoE3nlbAY7d6tXFDYM7i8ya3JbcsrQ==
+                          -----END PUBLIC KEY-----
               conditions:
                 - all:
                     - key: "{{ attestation.payload.statements[].status }}"
                       operator: AllNotIn
                       value:
-                        - affected
+                        - not_affected

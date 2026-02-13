@@ -71,12 +71,11 @@ rm kyverno-cli_v1.12.0_linux_x86_64.tar.gz
 ```
 
 ## Initialize Your Environment Variables
-**Step 1.** Initialize all the environment variables that will be used. The `REGISTRY_PORT` environment variable must be set to an port number that doesn't conflict the port Docker is listening on (i.e., you cannot use `5000`). 
+**Step 1.** Initialize all the environment variables that will be used. The `REGISTRY_PORT` environment variable must be set to an port number that doesn't conflict the port Docker's local container registry is listening on (i.e., you cannot use `5000`). 
 ```bash
 export REGISTRY_NAME="demo-registry"
 export REGISTRY_PORT="5001"
 export REGISTRY_INTERNAL_PORT="5000"
-export REGISTRY_DIR="/etc/containerd/certs.d/${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"
 export CLUSTER_NAME="demo-cluster"
 export COSIGN_INSECURE="true"
 ```
@@ -133,7 +132,7 @@ Server Version: v1.34.0
 ```
 
 ## Connect the Kubernetes Cluster to the Container Registry
-**Step 1.** Identify the configuration your container registry's network is using. 
+**Step 1.** Identify the configuration your Kubernetes cluster's network is using. 
 ```bash
 docker network inspect kind | jq ".[0].IPAM"
 ```
@@ -155,7 +154,7 @@ You should get output similar to below. Pay special attention to the IPv4 `Subne
 }
 ```
 
-**Step 2.** Connect your container registry network (e.g., `kind`) to your Kubernetes cluster's network. Do not skip this step or your Kubernetes cluster will not be able to resolve the hostname of your container registry.
+**Step 2.** Connect your Kubernetes cluster's network (e.g., `kind`) to your container registry's network. Do not skip this step or your Kubernetes cluster will not be able to resolve the hostname of your container registry.
 ```bash
 docker network connect kind ${REGISTRY_NAME}
 ```
@@ -171,20 +170,20 @@ You should get output similar to below. Specifically, you should see your contai
   "IPAMConfig": {},
   "Links": null,
   "Aliases": [],
-  "MacAddress": "6e:55:cb:b8:61:11",
   "DriverOpts": {},
   "GwPriority": 0,
-  "NetworkID": "ad1ee06b8928b980a422a2bc75f2f255deef535b85a0fc3ca6ae6d781985abdb",
-  "EndpointID": "6a83558f05d5134ce6c7f11e747588908656056a4a845139f671b71b14f31025",
+  "NetworkID": "531abfad301d29b4f3954a8e00759b7019ccd268d829d03efdbe8c91cdd77163",
+  "EndpointID": "91eba567e21493be9fb151c962bd50678e77eda2d7bdd4bf3b9026c67844353b",
   "Gateway": "172.18.0.1",
   "IPAddress": "172.18.0.5",
+  "MacAddress": "3a:32:cc:74:1c:02",
   "IPPrefixLen": 16,
   "IPv6Gateway": "fc00:f853:ccd:e793::1",
   "GlobalIPv6Address": "fc00:f853:ccd:e793::5",
   "GlobalIPv6PrefixLen": 64,
   "DNSNames": [
-    "demo",
-    "48178d3470ac"
+    "demo-registry",
+    "f26a00759bb5"
   ]
 }
 ```
@@ -275,12 +274,12 @@ You should get output similar to below. As you will see, the number of vulnerabi
 ## Tag and Pug the Container Image to the Container Registry
 **Step 1.** Tag the container image. 
 ```bash
-docker tag vulnerables/web-dvwa:latest localhost:${REGISTRY_PORT}/web-dvwa:latest
+docker tag vulnerables/web-dvwa:latest localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0
 ```
 
 **Step 2.** Push the container image to your container registry. 
 ```bash
-docker push localhost:${REGISTRY_PORT}/web-dvwa:latest
+docker push localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0
 ```
 
 You should get output similar to below.
@@ -294,7 +293,7 @@ acf8abb873ce: Pushed
 97a1040801c3: Pushed 
 80f9a8427b18: Pushed 
 a75caa09eb1f: Pushed 
-latest: digest: sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7 size: 1997
+v1.0.0: digest: sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7 size: 1997
 ```
 
 **Step 3.** Query your container registry to confirm your container image has been uploaded. 
@@ -309,22 +308,23 @@ You should get output similar to below.
 
 **Step 4.** Query your container registry to confirm which container image version was been uploaded. 
 ```bash
-curl http://localhost:5001/v2/web-dvwa/tags/list
+curl http://localhost:${REGISTRY_PORT}/v2/web-dvwa/tags/list
 ```
 
 You should get output similar to below.
 ```json
-{"name":"web-dvwa","tags":["latest"]}
+{"name":"web-dvwa","tags":["v1.0.0"]}
 ```
 
 ## Create Attestations that Link the SBOM and VEX Documents to the Container Image
 **Step 1.** Save the digest of the container image to an environment variable called `DIGEST`.
 ```bash
-export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:latest | cut -d":" -f2)
+export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0 | cut -d":" -f3)
 ```
 
 **Step 2.** Text goes here.
 ```bash
+export COSIGN_PASSWORD=""
 cosign generate-key-pair
 ```
 
@@ -334,7 +334,21 @@ cosign attest \
   --key cosign.key \
   --type spdxjson \
   --predicate sbom.json \
+  -y \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+You should get output similar to below. 
+```
+Using payload from: sbom.json
+
+    The sigstore service, hosted by sigstore a Series of LF Projects, LLC, is provided pursuant to the Hosted Project Tools Terms of Use, available at https://lfprojects.org/policies/hosted-project-tools-terms-of-use/.
+    Note that if your submission includes personal data associated with this signed artifact, it will be part of an immutable record.
+    This may include the email address associated with the account with which you authenticate your contractual Agreement.
+    This information will be used for signing this artifact and will be stored in public transparency logs and cannot be removed later, and is subject to the Immutable Record notice at https://lfprojects.org/policies/hosted-project-tools-immutable-records/.
+
+By typing 'y', you attest that (1) you are not submitting the personal data of any other person; and (2) you understand and agree to the statement and the Agreement terms at the URLs listed above.
+tlog entry created with index: 951636796
 ```
 
 **Step 4.** Create an attestation in the container registry, using `cosign`, that links the VEX document (e.g., `vex.json`) to the container.
@@ -343,7 +357,21 @@ cosign attest \
   --key cosign.key \
   --type openvex \
   --predicate vex.json \
+  -y \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+You should get output similar to below. 
+```
+Using payload from: vex.json
+
+    The sigstore service, hosted by sigstore a Series of LF Projects, LLC, is provided pursuant to the Hosted Project Tools Terms of Use, available at https://lfprojects.org/policies/hosted-project-tools-terms-of-use/.
+    Note that if your submission includes personal data associated with this signed artifact, it will be part of an immutable record.
+    This may include the email address associated with the account with which you authenticate your contractual Agreement.
+    This information will be used for signing this artifact and will be stored in public transparency logs and cannot be removed later, and is subject to the Immutable Record notice at https://lfprojects.org/policies/hosted-project-tools-immutable-records/.
+
+By typing 'y', you attest that (1) you are not submitting the personal data of any other person; and (2) you understand and agree to the statement and the Agreement terms at the URLs listed above.
+tlog entry created with index: 951642840
 ```
 
 **Step 5.** Confirm the attestations exist for the container image in the container registry.
@@ -355,8 +383,8 @@ You should get output similar to below.
 ```
 📦 Supply Chain Security Related artifacts for an image: localhost:5001/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 └── 💾 Attestations for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.att
-   ├── 🍒 sha256:317158b7ac4bee58a60e378a1362e76d7bf3f2386ed75cc3a47a8e630e56b695
-   └── 🍒 sha256:a51a162652a5e72e85e84dbb5539e973588bb5069f0dff0d9ff83c8857a80329
+   ├── 🍒 sha256:0eaad01d2d13de6bf0eabf432a64a3d2bd0ff420aac54b0fbdc6eb965ce515cc
+   └── 🍒 sha256:31b941dba3d1f72b6d6c3506013e3dbff796d6b7332703aa1d0514a7345c1219
 ```
 
 **Step 6.** Text goes here.
@@ -389,7 +417,7 @@ metadata:
 spec:
   containers:
   - name: dvwa
-    image: ${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}/web-dvwa:latest
+    image: ${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}/web-dvwa:v1.0.0
 EOF
 ```
 
@@ -400,40 +428,40 @@ kubectl describe pod demo-pod
 
 You should get output similar to below.
 ```yaml
+Name:             demo-pod
 Namespace:        default
 Priority:         0
 Service Account:  default
-Node:             demo-worker2/172.18.0.2
-Start Time:       Sun, 08 Feb 2026 21:06:49 -0500
+Node:             demo-cluster-worker/172.18.0.2
+Start Time:       Fri, 13 Feb 2026 17:22:39 -0500
 Labels:           app=dvwa
 Annotations:      <none>
-Status:           Running
-IP:               10.244.1.3
-IPs:
-  IP:  10.244.1.3
+Status:           Pending
+IP:               
+IPs:              <none>
 Containers:
   dvwa:
-    Container ID:   containerd://b25c3517ab33e026bb9cfbdfd0fc82863c55b1730f46cef3871de9e014cd6d7c
-    Image:          demo:5000/web-dvwa:latest
-    Image ID:       demo:5000/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
+    Container ID:   
+    Image:          demo-registry:5000/web-dvwa:v1.0.0
+    Image ID:       
     Port:           <none>
     Host Port:      <none>
-    State:          Running
-      Started:      Sun, 08 Feb 2026 21:06:49 -0500
-    Ready:          True
+    State:          Waiting
+      Reason:       ContainerCreating
+    Ready:          False
     Restart Count:  0
     Environment:    <none>
     Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-r7jc9 (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-wv8z4 (ro)
 Conditions:
   Type                        Status
-  PodReadyToStartContainers   True 
+  PodReadyToStartContainers   False 
   Initialized                 True 
-  Ready                       True 
-  ContainersReady             True 
+  Ready                       False 
+  ContainersReady             False 
   PodScheduled                True 
 Volumes:
-  kube-api-access-r7jc9:
+  kube-api-access-wv8z4:
     Type:                    Projected (a volume that contains injected data from multiple sources)
     TokenExpirationSeconds:  3607
     ConfigMapName:           kube-root-ca.crt
@@ -446,11 +474,11 @@ Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists fo
 Events:
   Type    Reason     Age   From               Message
   ----    ------     ----  ----               -------
-  Normal  Scheduled  15s   default-scheduler  Successfully assigned default/demo-pod to demo-worker2
-  Normal  Pulling    15s   kubelet            spec.containers{dvwa}: Pulling image "demo:5000/web-dvwa:latest"
-  Normal  Pulled     15s   kubelet            spec.containers{dvwa}: Successfully pulled image "demo:5000/web-dvwa:latest" in 126ms (126ms including waiting). Image size: 178370991 bytes.
-  Normal  Created    15s   kubelet            spec.containers{dvwa}: Created container: dvwa
-  Normal  Started    15s   kubelet            spec.containers{dvwa}: Started container dvwa
+  Normal  Scheduled  13s   default-scheduler  Successfully assigned default/demo-pod to demo-cluster-worker
+  Normal  Pulling    12s   kubelet            spec.containers{dvwa}: Pulling image "demo-registry:5000/web-dvwa:v1.0.0"
+  Normal  Pulled     1s    kubelet            spec.containers{dvwa}: Successfully pulled image "demo-registry:5000/web-dvwa:v1.0.0" in 11.446s (11.446s including waiting). Image size: 178370991 bytes.
+  Normal  Created    1s    kubelet            spec.containers{dvwa}: Created container: dvwa
+  Normal  Started    1s    kubelet            spec.containers{dvwa}: Started container dvwa
 ```
 
 **Step 3.** Add a service resource to your workload so you can access your container image from your host OS. 
@@ -476,10 +504,19 @@ EOF
 ## Create and Apply Kyverno Policy
 **Step 1.** Install Kyverno on the Kubernetes cluster.
 ```bash
-kubectl create -f https://github.com/kyverno/kyverno/releases/download/v1.17.0/install.yaml
+helm repo add kyverno https://kyverno.github.io/kyverno/
+helm repo update
 ```
 
-**Step 2.** Wait for the Kyverno pods to start. 
+**Step 2.** Text goes here.
+```bash
+helm install kyverno kyverno/kyverno \
+  -n kyverno \
+  --create-namespace \
+  --set extraArgs[0]=--allowInsecureRegistry=true
+```
+
+**Step 3.** Wait for the Kyverno pods to start. 
 ```bash
 kubectl -n kyverno get pods
 ```
@@ -487,10 +524,10 @@ kubectl -n kyverno get pods
 You should eventually see output similar to below.
 ```
 NAME                                            READY   STATUS    RESTARTS   AGE
-kyverno-admission-controller-5f9fb8dcb8-2cv4n   1/1     Running   0          3m59s
-kyverno-background-controller-79b78db6b-gfmst   1/1     Running   0          3m59s
-kyverno-cleanup-controller-6bcc48b5-c29rm       1/1     Running   0          3m59s
-kyverno-reports-controller-5dbc78665-b7brp      1/1     Running   0          3m59s
+kyverno-admission-controller-5f9fb8dcb8-zg57j   1/1     Running   0          41s
+kyverno-background-controller-79b78db6b-w7dq2   1/1     Running   0          41s
+kyverno-cleanup-controller-6bcc48b5-k4c2k       1/1     Running   0          41s
+kyverno-reports-controller-5dbc78665-t9ksf      1/1     Running   0          41s
 ```
 
 **Step 3.** Apply a Kyverno policy to the Kubernetes cluster.
