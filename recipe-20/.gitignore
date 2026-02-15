@@ -1,3 +1,4 @@
 *.json
 *.key
 *.pub
+*.crt

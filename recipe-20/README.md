@@ -4,11 +4,12 @@
 * [Deploy a Container Registry](#deploy-a-container-registry)
 * [Deploy a Kubernetes Cluster](#deploy-a-kubernetes-cluster)
 * [Connect the Kubernetes Cluster to the Container Registry](#connect-the-kubernetes-cluster-to-the-container-registry)
+* [Install Kyverno on the Kubernetes Cluster](#install-kyverno-on-the-kubernetes-cluster)
 * [Create an SBOM and VEX Document](#create-an-sbom-and-vex-document)
-* [Tag and Pug the Container Image to the Container Registry](#tag-and-pug-the-container-image-to-the-container-registry)
+* [Tag and Push the Container Image to the Container Registry](#tag-and-push-the-container-image-to-the-container-registry)
 * [Create Attestations that Link the SBOM and VEX Documents to the Container Image](#create-attestations-that-link-the-sbom-and-vex-documents-to-the-container-image)
+* [Create and Apply a Kyverno Policy](#create-and-apply-a-kyverno-policy)
 * [Deploy a Container on the Kubernetes Cluster](#deploy-a-container-on-the-kubernetes-cluster)
-* [Create and Apply Kyverno Policy](#create-and-apply-kyverno-policy)
 * [References](#references)
 
 ## Setup
@@ -77,18 +78,45 @@ export REGISTRY_NAME="demo-registry"
 export REGISTRY_PORT="5001"
 export REGISTRY_INTERNAL_PORT="5000"
 export CLUSTER_NAME="demo-cluster"
-export COSIGN_INSECURE="true"
+export COSIGN_PASSWORD="demo"
 ```
 
 ## Deploy a Container Registry
-**Step 1.** Deploy a container registry locally called using `docker`.
+**Step 1.** Create a public and private key pair for the container registry you're about deploy.
 ```bash
-docker run -d -p ${REGISTRY_PORT}:5000 --restart=always --name $REGISTRY_NAME registry:3
+openssl req -x509 -nodes -days 365 \
+  -newkey rsa:4096 \
+  -out "${REGISTRY_NAME}.crt" \
+  -keyout "${REGISTRY_NAME}.key" \
+  -subj "/CN=${REGISTRY_NAME}" \
+  -addext "subjectAltName=DNS:${REGISTRY_NAME},DNS:localhost"
 ```
 
-**Step 2.** Verify the container registry is running by querying it.
+**Step 2.** Deploy a container registry locally called using `docker` and the key pair you just created.
 ```bash
-curl http://localhost:${REGISTRY_PORT}/v2/_catalog
+docker run -d \
+  --name ${REGISTRY_NAME} \
+  -p ${REGISTRY_PORT}:${REGISTRY_INTERNAL_PORT} \
+  -v $(pwd)/${REGISTRY_NAME}.crt:/certs/domain.crt \
+  -v $(pwd)/${REGISTRY_NAME}.key:/certs/domain.key \
+  -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+  -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+  registry:3
+```
+
+**Step 3.** Copy your container registry's public key to your local CA store. 
+```bash
+sudo cp ${REGISTRY_NAME}.crt /usr/local/share/ca-certificates/${REGISTRY_NAME}.crt
+```
+
+**Step 4.** Update your local CA store. 
+```bash
+sudo update-ca-certificates
+```
+
+**Step 5.** Verify the container registry is running by querying it from your local machine.
+```bash
+curl https://localhost:${REGISTRY_PORT}/v2/_catalog
 ```
 
 You should get output similar to below.
@@ -99,24 +127,7 @@ You should get output similar to below.
 ## Deploy a Kubernetes Cluster
 **Step 1.** Deploy a Kubernetes cluster called `demo` using `kind`.
 ```bash
-cat <<EOF | kind create cluster --name ${CLUSTER_NAME} --image kindest/node:v1.34.0 --config -
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"]
-    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}"]
-  [plugins."io.containerd.grpc.v1.cri".registry.configs."${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}".tls]
-    insecure_skip_verify = true
-nodes:
-- role: control-plane
-  extraPortMappings:
-  - containerPort: 30000
-    hostPort: 30000
-    protocol: TCP
-- role: worker
-- role: worker
-EOF
+kind create cluster --name ${CLUSTER_NAME} --image kindest/node:v1.34.0 --config cluster.yml
 ```
 
 **Step 2.** Confirm the version of your Kubernetes cluster is `v1.34.0` using `kubectl`.
@@ -129,6 +140,20 @@ You should get output similar to below.
 Client Version: v1.35.0
 Kustomize Version: v5.7.1
 Server Version: v1.34.0
+```
+
+**Step 3.** Add your container registry's public key to each of the nodes in your Kubernetes cluster. 
+```bash
+docker cp ${REGISTRY_NAME}.crt ${CLUSTER_NAME}-control-plane:/usr/local/share/ca-certificates/${REGISTRY_NAME}.crt
+docker cp ${REGISTRY_NAME}.crt ${CLUSTER_NAME}-worker:/usr/local/share/ca-certificates/${REGISTRY_NAME}.crt
+docker cp ${REGISTRY_NAME}.crt ${CLUSTER_NAME}-worker2:/usr/local/share/ca-certificates/${REGISTRY_NAME}.crt
+```
+
+**Step 4.** Update the CA store on each of the nodes in your Kubernetes cluster.
+```bash
+docker exec ${CLUSTER_NAME}-control-plane update-ca-certificates
+docker exec ${CLUSTER_NAME}-worker update-ca-certificates
+docker exec ${CLUSTER_NAME}-worker2 update-ca-certificates
 ```
 
 ## Connect the Kubernetes Cluster to the Container Registry
@@ -186,6 +211,45 @@ You should get output similar to below. Specifically, you should see your contai
     "f26a00759bb5"
   ]
 }
+```
+
+## Install Kyverno on the Kubernetes Cluster
+**Step 1.** Add the URL for the Kyverno Helm chart repo to your local Helm configuration.
+```bash
+helm repo add kyverno https://kyverno.github.io/kyverno/
+helm repo update
+```
+
+**Step 2.** Install Kyverno on the Kubernetes cluster.
+```bash
+helm install kyverno kyverno/kyverno \
+  --create-namespace \
+  -n kyverno 
+```
+
+**Step 3.** Wait for the Kyverno pods to start. 
+```bash
+kubectl -n kyverno get pods
+```
+
+You should eventually see output similar to below.
+```
+NAME                                            READY   STATUS    RESTARTS   AGE
+kyverno-admission-controller-5f9fb8dcb8-zg57j   1/1     Running   0          41s
+kyverno-background-controller-79b78db6b-w7dq2   1/1     Running   0          41s
+kyverno-cleanup-controller-6bcc48b5-k4c2k       1/1     Running   0          41s
+kyverno-reports-controller-5dbc78665-t9ksf      1/1     Running   0          41s
+```
+
+## Create and Apply a Kyverno Policy
+**Step 1.** Apply a Kyverno policy to the Kubernetes cluster.
+```bash
+kubectl apply -f kyverno-policy.yml
+```
+
+You should get output similar to below.
+```
+clusterpolicy.kyverno.io/block-affected-vex created
 ```
 
 ## Create an SBOM and VEX Document
@@ -271,7 +335,7 @@ You should get output similar to below. As you will see, the number of vulnerabi
    ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
 ```
 
-## Tag and Pug the Container Image to the Container Registry
+## Tag and Push the Container Image to the Container Registry
 **Step 1.** Tag the container image. 
 ```bash
 docker tag vulnerables/web-dvwa:latest localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0
@@ -298,7 +362,7 @@ v1.0.0: digest: sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f
 
 **Step 3.** Query your container registry to confirm your container image has been uploaded. 
 ```bash
-curl http://localhost:${REGISTRY_PORT}/v2/_catalog
+curl https://localhost:${REGISTRY_PORT}/v2/_catalog
 ```
 
 You should get output similar to below.
@@ -308,7 +372,7 @@ You should get output similar to below.
 
 **Step 4.** Query your container registry to confirm which container image version was been uploaded. 
 ```bash
-curl http://localhost:${REGISTRY_PORT}/v2/web-dvwa/tags/list
+curl https://localhost:${REGISTRY_PORT}/v2/web-dvwa/tags/list
 ```
 
 You should get output similar to below.
@@ -322,9 +386,8 @@ You should get output similar to below.
 export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0 | cut -d":" -f3)
 ```
 
-**Step 2.** Text goes here.
+**Step 2.** Create another public and private key pair albeit for `cosign` to use. 
 ```bash
-export COSIGN_PASSWORD=""
 cosign generate-key-pair
 ```
 
@@ -332,7 +395,7 @@ cosign generate-key-pair
 ```bash
 cosign attest \
   --key cosign.key \
-  --type spdxjson \
+  --type cyclonedx \
   --predicate sbom.json \
   -y \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
@@ -348,7 +411,7 @@ Using payload from: sbom.json
     This information will be used for signing this artifact and will be stored in public transparency logs and cannot be removed later, and is subject to the Immutable Record notice at https://lfprojects.org/policies/hosted-project-tools-immutable-records/.
 
 By typing 'y', you attest that (1) you are not submitting the personal data of any other person; and (2) you understand and agree to the statement and the Agreement terms at the URLs listed above.
-tlog entry created with index: 951636796
+tlog entry created with index: 953290970
 ```
 
 **Step 4.** Create an attestation in the container registry, using `cosign`, that links the VEX document (e.g., `vex.json`) to the container.
@@ -371,7 +434,7 @@ Using payload from: vex.json
     This information will be used for signing this artifact and will be stored in public transparency logs and cannot be removed later, and is subject to the Immutable Record notice at https://lfprojects.org/policies/hosted-project-tools-immutable-records/.
 
 By typing 'y', you attest that (1) you are not submitting the personal data of any other person; and (2) you understand and agree to the statement and the Agreement terms at the URLs listed above.
-tlog entry created with index: 951642840
+tlog entry created with index: 953290159
 ```
 
 **Step 5.** Confirm the attestations exist for the container image in the container registry.
@@ -383,19 +446,19 @@ You should get output similar to below.
 ```
 📦 Supply Chain Security Related artifacts for an image: localhost:5001/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 └── 💾 Attestations for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.att
-   ├── 🍒 sha256:0eaad01d2d13de6bf0eabf432a64a3d2bd0ff420aac54b0fbdc6eb965ce515cc
-   └── 🍒 sha256:31b941dba3d1f72b6d6c3506013e3dbff796d6b7332703aa1d0514a7345c1219
+   ├── 🍒 sha256:74926c7f6818c14e5267bc583e2eddd0b6f3bf3e372596fd61ac7db267d6612f
+   └── 🍒 sha256:b044887ff03a592f128cdbe5801c2bae705e1871421dc90dcc334d2f2f3950fe
 ```
 
-**Step 6.** Text goes here.
+**Step 6.** Verify the SBOM attestation.
 ```bash
 cosign verify-attestation \
   --key cosign.pub \
-  --type spdxjson \
+  --type cyclonedx \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
-**Step 7.** Text goes here.
+**Step 7.**  Verify the VEX attestation.
 ```bash
 cosign verify-attestation \
   --key cosign.pub \
@@ -406,19 +469,7 @@ cosign verify-attestation \
 ## Deploy a Container on the Kubernetes Cluster
 **Step 1.** Deploy a workload on your Kubernetes cluster that uses your container image. 
 ```bash
-cat <<EOF | kubectl apply -f -
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: demo-pod
-  labels:
-    app: dvwa
-spec:
-  containers:
-  - name: dvwa
-    image: ${REGISTRY_NAME}:${REGISTRY_INTERNAL_PORT}/web-dvwa:v1.0.0
-EOF
+kubectl apply -f app.yml
 ```
 
 **Step 2.** Check on the health of the workload using the command below. 
@@ -426,121 +477,7 @@ EOF
 kubectl describe pod demo-pod
 ```
 
-You should get output similar to below.
-```yaml
-Name:             demo-pod
-Namespace:        default
-Priority:         0
-Service Account:  default
-Node:             demo-cluster-worker/172.18.0.2
-Start Time:       Fri, 13 Feb 2026 17:22:39 -0500
-Labels:           app=dvwa
-Annotations:      <none>
-Status:           Pending
-IP:               
-IPs:              <none>
-Containers:
-  dvwa:
-    Container ID:   
-    Image:          demo-registry:5000/web-dvwa:v1.0.0
-    Image ID:       
-    Port:           <none>
-    Host Port:      <none>
-    State:          Waiting
-      Reason:       ContainerCreating
-    Ready:          False
-    Restart Count:  0
-    Environment:    <none>
-    Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-wv8z4 (ro)
-Conditions:
-  Type                        Status
-  PodReadyToStartContainers   False 
-  Initialized                 True 
-  Ready                       False 
-  ContainersReady             False 
-  PodScheduled                True 
-Volumes:
-  kube-api-access-wv8z4:
-    Type:                    Projected (a volume that contains injected data from multiple sources)
-    TokenExpirationSeconds:  3607
-    ConfigMapName:           kube-root-ca.crt
-    Optional:                false
-    DownwardAPI:             true
-QoS Class:                   BestEffort
-Node-Selectors:              <none>
-Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
-                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
-Events:
-  Type    Reason     Age   From               Message
-  ----    ------     ----  ----               -------
-  Normal  Scheduled  13s   default-scheduler  Successfully assigned default/demo-pod to demo-cluster-worker
-  Normal  Pulling    12s   kubelet            spec.containers{dvwa}: Pulling image "demo-registry:5000/web-dvwa:v1.0.0"
-  Normal  Pulled     1s    kubelet            spec.containers{dvwa}: Successfully pulled image "demo-registry:5000/web-dvwa:v1.0.0" in 11.446s (11.446s including waiting). Image size: 178370991 bytes.
-  Normal  Created    1s    kubelet            spec.containers{dvwa}: Created container: dvwa
-  Normal  Started    1s    kubelet            spec.containers{dvwa}: Started container dvwa
-```
-
-**Step 3.** Add a service resource to your workload so you can access your container image from your host OS. 
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Service
-metadata:
-  name: demo-service
-spec:
-  type: NodePort
-  selector:
-    app: dvwa
-  ports:
-  - port: 80
-    targetPort: 80
-    nodePort: 30000
-EOF
-```
-
-**Step 4.** Open a browser to [http://localhost:30000](http://localhost:30000) and confirm you're able to interact with the workload.
-
-## Create and Apply Kyverno Policy
-**Step 1.** Install Kyverno on the Kubernetes cluster.
-```bash
-helm repo add kyverno https://kyverno.github.io/kyverno/
-helm repo update
-```
-
-**Step 2.** Text goes here.
-```bash
-helm install kyverno kyverno/kyverno \
-  -n kyverno \
-  --create-namespace \
-  --set extraArgs[0]=--allowInsecureRegistry=true
-```
-
-**Step 3.** Wait for the Kyverno pods to start. 
-```bash
-kubectl -n kyverno get pods
-```
-
-You should eventually see output similar to below.
-```
-NAME                                            READY   STATUS    RESTARTS   AGE
-kyverno-admission-controller-5f9fb8dcb8-zg57j   1/1     Running   0          41s
-kyverno-background-controller-79b78db6b-w7dq2   1/1     Running   0          41s
-kyverno-cleanup-controller-6bcc48b5-k4c2k       1/1     Running   0          41s
-kyverno-reports-controller-5dbc78665-t9ksf      1/1     Running   0          41s
-```
-
-**Step 3.** Apply a Kyverno policy to the Kubernetes cluster.
-```bash
-kubectl apply -f policy.yml
-```
-
-You should get output similar to below.
-```
-clusterpolicy.kyverno.io/block-affected-vex created
-```
-
-**Step 4.** Test the cluster policy.
+**Step 3.** Open a browser to [http://localhost:30000](http://localhost:30000) and confirm you're able to interact with the workload.
 
 ## References
 **Cosign**  
@@ -565,4 +502,3 @@ https://github.com/openvex/spec/blob/main/OPENVEX-SPEC.md#status-justifications
 
 **Package-URL (PURL) Specification: OCI Definition**  
 https://github.com/package-url/purl-spec/blob/main/types/oci-definition.json
-
