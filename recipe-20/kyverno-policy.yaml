@@ -1,0 +1,30 @@
+apiVersion: policies.kyverno.io/v1
+kind: ImageValidatingPolicy
+metadata:
+  name: check-images
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['']
+        apiVersions: ['v1']
+        operations: ['CREATE']
+        resources: ['pods']
+  matchImageReferences:
+    - glob: "*"
+  attestors:
+    - name: cosign 
+      cosign:
+        key: 
+          data:
+            | 
+            -----BEGIN PUBLIC KEY-----
+            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9QlAbbOJ7JcXXFRVvGnyaBeaZ/9k
+            h+pme/+5e5hW+2+zYyWYlQ3wRS8FtrMdlC8qyTJPjpo4MimZArbL4rYhNw==
+            -----END PUBLIC KEY-----
+  attestations:
+    - name: sbom 
+      referrer: 
+        type: https://cyclonedx.org/schema/bom-1.4
+  validations:
+    - expression: "has(attestations.sbom)"
+      message: "The image must have a signed CycloneDX SBOM attestation."
