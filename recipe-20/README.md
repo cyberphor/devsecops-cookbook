@@ -494,7 +494,7 @@ https://kind.sigs.k8s.io/docs/user/local-registry/
 https://kind.sigs.k8s.io/docs/user/using-wsl2/#accessing-a-kubernetes-service-running-in-wsl2
 
 **OCI Artifacts**  
-Artifacts are stored as OCI manifests and reference a subject manifest via its digest. 
+Artifacts are stored as OCI manifests and reference a subject manifest via its digest.  
 https://github.com/opencontainers/artifacts?tab=readme-ov-file
 
 **OpenVEX Specification v0.2.0**  
