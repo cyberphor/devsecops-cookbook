@@ -1,0 +1,34 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: block-affected-vex
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: check-vex-not-affected
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "*"
+          attestations:
+            - type: https://openvex.dev/ns/v0.2.0
+              attestors:
+                - entries:
+                    - keys:
+                        publicKeys: |-
+                          -----BEGIN PUBLIC KEY-----
+                          MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEna//7ufUycLQocpYtWQEhMKsOO68
+                          1xq66kaVhjv4wi6mcLjpMhApA0U+RoE3nlbAY7d6tXFDYM7i8ya3JbcsrQ==
+                          -----END PUBLIC KEY-----
+              conditions:
+                - all:
+                    - key: "{{ attestation.payload.statements[].status }}"
+                      operator: AllNotIn
+                      value:
+                        - not_affected
