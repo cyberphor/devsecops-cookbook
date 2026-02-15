@@ -1,0 +1,9 @@
+---
+global:
+  caCertificates:
+    volume:
+      hostPath:
+        path: /etc/ssl/certs/ca-certificates.crt
+        type: File
+config:
+  maxContextSize: 10Mi

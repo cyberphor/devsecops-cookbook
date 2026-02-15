@@ -127,7 +127,7 @@ You should get output similar to below.
 ## Deploy a Kubernetes Cluster
 **Step 1.** Deploy a Kubernetes cluster called `demo` using `kind`.
 ```bash
-kind create cluster --name ${CLUSTER_NAME} --image kindest/node:v1.34.0 --config cluster.yml
+kind create cluster --name ${CLUSTER_NAME} --image kindest/node:v1.34.0 --config cluster.yaml
 ```
 
 **Step 2.** Confirm the version of your Kubernetes cluster is `v1.34.0` using `kubectl`.
@@ -220,11 +220,28 @@ helm repo add kyverno https://kyverno.github.io/kyverno/
 helm repo update
 ```
 
+**Step 1.** Either use the provided `kyverno-values.yaml` file or recreate it. 
+```bash
+vim kyverno-values.yaml
+```
+
+Make sure the content below is in the file. This will ensure the `ca-certificates.crt` file of the node each Kyverno pod is running on is mounted as a file volume. 
+```yaml
+---
+global:
+  caCertificates:
+    volume:
+      hostPath:
+        path: /etc/ssl/certs/ca-certificates.crt
+        type: File
+```
+
 **Step 2.** Install Kyverno on the Kubernetes cluster.
 ```bash
 helm install kyverno kyverno/kyverno \
   --create-namespace \
-  -n kyverno 
+  -n kyverno \
+  -f kyverno-values.yaml
 ```
 
 **Step 3.** Wait for the Kyverno pods to start. 
@@ -244,7 +261,7 @@ kyverno-reports-controller-5dbc78665-t9ksf      1/1     Running   0          41s
 ## Create and Apply a Kyverno Policy
 **Step 1.** Apply a Kyverno policy to the Kubernetes cluster.
 ```bash
-kubectl apply -f kyverno-policy.yml
+kubectl apply -f kyverno-policy.yaml
 ```
 
 You should get output similar to below.
@@ -469,7 +486,7 @@ cosign verify-attestation \
 ## Deploy a Container on the Kubernetes Cluster
 **Step 1.** Deploy a workload on your Kubernetes cluster that uses your container image. 
 ```bash
-kubectl apply -f app.yml
+kubectl apply -f app.yaml
 ```
 
 **Step 2.** Check on the health of the workload using the command below. 
@@ -493,8 +510,11 @@ https://kind.sigs.k8s.io/docs/user/local-registry/
 **kind: Using WSL2**  
 https://kind.sigs.k8s.io/docs/user/using-wsl2/#accessing-a-kubernetes-service-running-in-wsl2
 
+**Kyverno: Host Mount**    
+https://main.kyverno.io/docs/policy-types/cluster-policy/verify-images/sigstore/#host-mount
+
 **OCI Artifacts**  
-Artifacts are stored as OCI manifests and reference a subject manifest via its digest. 
+Artifacts are stored as OCI manifests and reference a subject manifest via its digest.  
 https://github.com/opencontainers/artifacts?tab=readme-ov-file
 
 **OpenVEX Specification v0.2.0**  
