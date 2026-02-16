@@ -5,8 +5,10 @@
 * [Deploy a Kubernetes Cluster](#deploy-a-kubernetes-cluster)
 * [Connect the Kubernetes Cluster to the Container Registry](#connect-the-kubernetes-cluster-to-the-container-registry)
 * [Install Kyverno on the Kubernetes Cluster](#install-kyverno-on-the-kubernetes-cluster)
-* [Create an SBOM and VEX Document](#create-an-sbom-and-vex-document)
 * [Tag and Push the Container Image to the Container Registry](#tag-and-push-the-container-image-to-the-container-registry)
+* [Create an SBOM](#create-an-sbom)
+* [Scan the SBOM](#scan-the-sbom)
+* [Create a VEX Document and Rescan the SBOM](#create-a-vex-document-and-rescan-the-sbom)
 * [Create Attestations that Link the SBOM and VEX Documents to the Container Image](#create-attestations-that-link-the-sbom-and-vex-documents-to-the-container-image)
 * [Create and Apply a Kyverno Policy](#create-and-apply-a-kyverno-policy)
 * [Deploy a Container on the Kubernetes Cluster](#deploy-a-container-on-the-kubernetes-cluster)
@@ -269,89 +271,6 @@ You should get output similar to below.
 clusterpolicy.kyverno.io/block-affected-vex created
 ```
 
-## Create an SBOM and VEX Document
-**Step 1.** Create an SBOM for a container image using `syft`.
-```bash
-syft vulnerables/web-dvwa -o cyclonedx-json=sbom.json
-```
-
-You should get output similar to below. 
-```
- ✔ Loaded image                                                                                                                   vulnerables/web-dvwa:latest 
- ✔ Parsed image                                                                       sha256:ab0d83586b6e8799bb549ab91914402e47e3bcc7eea0c5cdf43755d56150cc6a 
- ✔ Cataloged contents                                                                        738614d5cf55eef7c055a83881c558b6fc9188c6da94956da63132c04afff180 
-   ├── ✔ Packages                        [221 packages]  
-   ├── ✔ Executables                     [1,132 executables]  
-   ├── ✔ File metadata                   [9,458 locations]  
-   └── ✔ File digests                    [9,458 files]
-```
-
-**Step 2.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
-```bash
-grype sbom:sbom.json -o cyclonedx-json=scan.json
-```
-
-You should get output similar to below. Note the number of vulnerability matches (2097 in total). 
-```
- ✔ Scanned for vulnerabilities     [2097 vulnerability matches]  
-   ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
-```
-
-**Step 3.** Review the CVEs reported by `grype`. 
-```bash
-cat scan.json | jq '.vulnerabilities'
-```
-
-**Step 4.** Pick a component and a CVE (e.g., `CVE-2019-11043`) Grype associated with it that you want to suppress. Then, run again Grype to get the Package URL its using for the component. 
-```bash
-grype sbom:sbom.json -o json | jq -r '.matches[] | select(.vulnerability.id=="CVE-2019-11043") | .artifact.purl'
-```
-
-You should get output similar to below.
-```
- ✔ Scanned for vulnerabilities     [2097 vulnerability matches]  
-   ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
-pkg:deb/debian/libapache2-mod-php7.0@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-pkg:deb/debian/php7.0@7.0.30-0%2Bdeb9u1?arch=all&distro=debian-9
-pkg:deb/debian/php7.0-cli@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-pkg:deb/debian/php7.0-common@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-pkg:deb/debian/php7.0-gd@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-pkg:deb/debian/php7.0-json@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-pkg:deb/debian/php7.0-mysql@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-pkg:deb/debian/php7.0-opcache@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-pkg:deb/debian/php7.0-pgsql@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-pkg:deb/debian/php7.0-readline@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-pkg:deb/debian/php7.0-xml@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
-```
-
-**Step 5.** Create a VEX document using your product PURL, component PURL, and CVE. For containers, the PURL format is `pkg:oci/<image-name>@sha256%<image-id>?tag=<tag>`. For example, the product URL for the latest version of the container image `web-dvwa` is `pkg:oci/web-dvwa@sha256%ab0d83586b6e?tag=latest`. To get the image ID of a container in your local container registry, run `docker image ls` (or whatever is the equivalent for the container runtime you have installed).
-```bash
-vexctl create \
-  --product="pkg:oci/web-dvwa@sha256%ab0d83586b6e?tag=latest" \
-  --vuln="CVE-2019-11043" \
-  --subcomponents="pkg:deb/debian/libapache2-mod-php7.0@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0" \
-  --status="not_affected" \
-  --justification="vulnerable_code_not_in_execute_path" \
-  --file="vex.json" \
-  --author="victor@deathlabs.io"
-```
-
-You should get output similar to below. 
-```
-> VEX document written to vex.json
-```
-
-**Step 6.** Using the VEX document as additional input, scan the SBOM again to verify the CVE gets suppressed. 
-```bash
-grype sbom:sbom.json --vex=vex.json -o cyclonedx-json=scan-2.json
-```
-
-You should get output similar to below. As you will see, the number of vulnerability matches went down from 2097 to 2096.
-```
- ✔ Scanned for vulnerabilities     [2096 vulnerability matches]  
-   ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
-```
-
 ## Tag and Push the Container Image to the Container Registry
 **Step 1.** Tag the container image. 
 ```bash
@@ -395,6 +314,93 @@ curl https://localhost:${REGISTRY_PORT}/v2/web-dvwa/tags/list
 You should get output similar to below.
 ```json
 {"name":"web-dvwa","tags":["v1.0.0"]}
+```
+
+## Create an SBOM
+**Step 1.** Create an SBOM for a container image using `syft`.
+```bash
+syft localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0 -o cyclonedx-json=sbom.json
+```
+
+You should get output similar to below. 
+```
+ ✔ Loaded image              localhost:5001/web-dvwa:v1.0.0 
+ ✔ Parsed image              sha256:ab0d83586b6e8799bb549ab91914402e47e3bcc7eea0c5cdf43755d56150cc6a 
+ ✔ Cataloged contents        57ccc369ab5ae7ddfb8af89d2b2ab4b4e64a9d391ba2fc84952998a3044ffc42 
+   ├── ✔ Packages                        [221 packages]  
+   ├── ✔ Executables                     [1,132 executables]  
+   ├── ✔ File metadata                   [9,458 locations]  
+   └── ✔ File digests                    [9,458 files]  
+```
+
+## Scan the SBOM
+**Step 1.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
+```bash
+grype sbom:sbom.json -o cyclonedx-json=scan.json
+```
+
+You should get output similar to below. Note the number of vulnerability matches (2097 in total). 
+```
+ ✔ Vulnerability DB                [updated]  
+ ✔ Scanned for vulnerabilities     [2097 vulnerability matches]  
+   ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
+   └── by status:   1362 fixed, 735 not-fixed, 0 ignored 
+```
+
+**Step 3.** Review the CVEs reported by `grype` using `jq`. 
+```bash
+cat scan.json | jq '.vulnerabilities'
+```
+
+## Create a VEX Document and Rescan the SBOM
+**Step 1.** Pick a component and a CVE (e.g., `CVE-2019-11043`) Grype associated with it that you want to suppress. Then, run again Grype to get the Package URL its using for the component. 
+```bash
+grype sbom:sbom.json -o json | jq -r '.matches[] | select(.vulnerability.id=="CVE-2019-11043") | .artifact.purl'
+```
+
+You should get output similar to below.
+```
+ ✔ Scanned for vulnerabilities     [2097 vulnerability matches]  
+   ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
+pkg:deb/debian/libapache2-mod-php7.0@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+pkg:deb/debian/php7.0@7.0.30-0%2Bdeb9u1?arch=all&distro=debian-9
+pkg:deb/debian/php7.0-cli@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+pkg:deb/debian/php7.0-common@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+pkg:deb/debian/php7.0-gd@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+pkg:deb/debian/php7.0-json@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+pkg:deb/debian/php7.0-mysql@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+pkg:deb/debian/php7.0-opcache@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+pkg:deb/debian/php7.0-pgsql@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+pkg:deb/debian/php7.0-readline@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+pkg:deb/debian/php7.0-xml@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
+```
+
+**Step 2.** Create a VEX document using your product PURL, component PURL, and CVE. For containers, the PURL format is `pkg:oci/<image-name>@sha256%<image-id>?tag=<tag>`. For example, the product URL for `v1.0.0` of the container image `web-dvwa` is `pkg:oci/web-dvwa@sha256%ab0d83586b6e?tag=v1.0.0`. To get the image ID of a container in your local container registry, run `docker image ls` (or whatever is the equivalent for the container runtime you have installed).
+```bash
+vexctl create \
+  --product="pkg:oci/web-dvwa@sha256%ab0d83586b6e?tag=latest" \
+  --vuln="CVE-2019-11043" \
+  --subcomponents="pkg:deb/debian/libapache2-mod-php7.0@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0" \
+  --status="not_affected" \
+  --justification="vulnerable_code_not_in_execute_path" \
+  --file="vex.json" \
+  --author="victor@deathlabs.io"
+```
+
+You should get output similar to below. 
+```
+> VEX document written to vex.json
+```
+
+**Step 3.** Using the VEX document as additional input, scan the SBOM again to verify the CVE gets suppressed. 
+```bash
+grype sbom:sbom.json --vex=vex.json -o cyclonedx-json=scan-2.json
+```
+
+You should get output similar to below. As you will see, the number of vulnerability matches went down from 2097 to 2096.
+```
+ ✔ Scanned for vulnerabilities     [2096 vulnerability matches]  
+   ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
 ```
 
 ## Create Attestations that Link the SBOM and VEX Documents to the Container Image
