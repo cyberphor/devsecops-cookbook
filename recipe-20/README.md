@@ -220,7 +220,7 @@ helm repo add kyverno https://kyverno.github.io/kyverno/
 helm repo update
 ```
 
-**Step 1.** Either use the provided `kyverno-values.yaml` file or recreate it. 
+**Step 2.** Either use the provided `kyverno-values.yaml` file or recreate it. 
 ```bash
 vim kyverno-values.yaml
 ```
@@ -236,7 +236,7 @@ global:
         type: File
 ```
 
-**Step 2.** Install Kyverno on the Kubernetes cluster.
+**Step 3.** Install Kyverno on the Kubernetes cluster.
 ```bash
 helm install kyverno kyverno/kyverno \
   --create-namespace \
@@ -244,7 +244,7 @@ helm install kyverno kyverno/kyverno \
   -f kyverno-values.yaml
 ```
 
-**Step 3.** Wait for the Kyverno pods to start. 
+**Step 4.** Wait for the Kyverno pods to start. 
 ```bash
 kubectl -n kyverno get pods
 ```
@@ -264,50 +264,73 @@ kyverno-reports-controller-5dbc78665-t9ksf      1/1     Running   0          41s
 kubectl apply -f kyverno-policy.yaml
 ```
 
-You should get output similar to below.
+The output should be similar to below.
 ```
 clusterpolicy.kyverno.io/block-affected-vex created
 ```
 
-## Create an SBOM and VEX Document
-**Step 1.** Create an SBOM for a container image using `syft`.
+## Pull a Container Image
+**Step 1.** Pull a container image.
 ```bash
-syft vulnerables/web-dvwa -o cyclonedx-json=sbom.json
+docker pull vulnerables/web-dvwa:latest
 ```
 
-You should get output similar to below. 
+The output should be similar to below. 
 ```
- ✔ Loaded image                                                                                                                   vulnerables/web-dvwa:latest 
- ✔ Parsed image                                                                       sha256:ab0d83586b6e8799bb549ab91914402e47e3bcc7eea0c5cdf43755d56150cc6a 
- ✔ Cataloged contents                                                                        738614d5cf55eef7c055a83881c558b6fc9188c6da94956da63132c04afff180 
+latest: Pulling from vulnerables/web-dvwa
+3e17c6eae66c: Pull complete 
+0c57df616dbf: Pull complete 
+eb05d18be401: Pull complete 
+e9968e5981d2: Pull complete 
+2cd72dba8257: Pull complete 
+6cff5f35147f: Pull complete 
+098cffd43466: Pull complete 
+b3d64a33242d: Pull complete 
+Digest: sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
+Status: Downloaded newer image for vulnerables/web-dvwa:latest
+docker.io/vulnerables/web-dvwa:latest
+```
+
+## Create an SBOM
+**Step 1.** Create an SBOM for a container image in your container registry using `syft`.
+```bash
+syft vulnerables/web-dvwa:latest -o cyclonedx-json=sbom.json
+```
+
+The output should be similar to below. 
+```
+ ✔ Loaded image                                                                   vulnerables/web-dvwa:latest 
+ ✔ Parsed image                       sha256:ab0d83586b6e8799bb549ab91914402e47e3bcc7eea0c5cdf43755d56150cc6a 
+ ✔ Cataloged contents                        738614d5cf55eef7c055a83881c558b6fc9188c6da94956da63132c04afff180 
    ├── ✔ Packages                        [221 packages]  
    ├── ✔ Executables                     [1,132 executables]  
    ├── ✔ File metadata                   [9,458 locations]  
    └── ✔ File digests                    [9,458 files]
 ```
 
-**Step 2.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
+## Scan the SBOM
+**Step 1.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
 ```bash
 grype sbom:sbom.json -o cyclonedx-json=scan.json
 ```
 
-You should get output similar to below. Note the number of vulnerability matches (2097 in total). 
+The output should be similar to below. Note the number of vulnerability matches (2097 in total). 
 ```
  ✔ Scanned for vulnerabilities     [2097 vulnerability matches]  
    ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
 ```
 
-**Step 3.** Review the CVEs reported by `grype`. 
+**Step 2.** Review the CVEs reported by `grype`. 
 ```bash
 cat scan.json | jq '.vulnerabilities'
 ```
 
-**Step 4.** Pick a component and a CVE (e.g., `CVE-2019-11043`) Grype associated with it that you want to suppress. Then, run again Grype to get the Package URL its using for the component. 
+**Step 3.** Pick a component and a CVE (e.g., `CVE-2019-11043`) Grype associated with it that you want to suppress. Then, run again Grype to get the Package URL its using for the component. 
 ```bash
 grype sbom:sbom.json -o json | jq -r '.matches[] | select(.vulnerability.id=="CVE-2019-11043") | .artifact.purl'
 ```
 
-You should get output similar to below.
+The output should be similar to below.
 ```
  ✔ Scanned for vulnerabilities     [2097 vulnerability matches]  
    ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
@@ -324,10 +347,30 @@ pkg:deb/debian/php7.0-readline@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upst
 pkg:deb/debian/php7.0-xml@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
 ```
 
-**Step 5.** Create a VEX document using your product PURL, component PURL, and CVE. For containers, the PURL format is `pkg:oci/<image-name>@sha256%<image-id>?tag=<tag>`. For example, the product URL for the latest version of the container image `web-dvwa` is `pkg:oci/web-dvwa@sha256%ab0d83586b6e?tag=latest`. To get the image ID of a container in your local container registry, run `docker image ls` (or whatever is the equivalent for the container runtime you have installed).
+## Create a VEX Document
+Vulnerability Exploitability Exchange (VEX) documents allow you to communicate the status of vulnerabilities in a machine-readable format that follows CISA minimum requirements. To create a VEX document, we will use `vexctl`. 
+
+According to [the Package URL (PURL) specification](https://github.com/package-url/purl-spec/blob/main/types-doc/oci-definition.md), the PURL format for OCI images is `pkg:oci/<image_name>@sha256%<image_digest>?repository_url=<repository_url>&tag=<tag>`. While getting the `image_name`, `repository_url`, and `tag` are self-explanatory, the `image_digest` can be found by running `docker inspect`. 
+
+**Step 1.** Save the digest of the container image to an environment variable. 
+```bash
+export IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' vulnerables/web-dvwa:latest | cut -d":" -f2)
+```
+
+**Step 2.** Print the environment variable to confirm the value returned by Docker.
+```bash
+echo $IMAGE_DIGEST
+```
+
+The output should be similar to below.
+```bash
+dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
+```
+
+**Step 3.** Create a VEX document using the CVE in question, the PURL of the container image, and the PURL of the component in question.
 ```bash
 vexctl create \
-  --product="pkg:oci/web-dvwa@sha256%ab0d83586b6e?tag=latest" \
+  --product="pkg:oci/web-dvwa@sha256%$IMAGE_DIGEST?repository_url=vulnerables&tag=latest" \
   --vuln="CVE-2019-11043" \
   --subcomponents="pkg:deb/debian/libapache2-mod-php7.0@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0" \
   --status="not_affected" \
@@ -341,9 +384,10 @@ You should get output similar to below.
 > VEX document written to vex.json
 ```
 
-**Step 6.** Using the VEX document as additional input, scan the SBOM again to verify the CVE gets suppressed. 
+## Rescan the SBOM Using the VEX Document
+**Step 1.** Using `grype` and the VEX document as additional input, scan the SBOM again to suppress the CVE. 
 ```bash
-grype sbom:sbom.json --vex=vex.json -o cyclonedx-json=scan-2.json
+grype sbom:sbom.json --vex=vex.json -o cyclonedx-json=scan.json
 ```
 
 You should get output similar to below. As you will see, the number of vulnerability matches went down from 2097 to 2096.
@@ -353,31 +397,17 @@ You should get output similar to below. As you will see, the number of vulnerabi
 ```
 
 ## Tag and Push the Container Image to the Container Registry
-**Step 1.** Tag the container image. 
+**Step 1.** Tag the container image for your container registry. 
 ```bash
-docker tag vulnerables/web-dvwa:latest localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0
+docker tag vulnerables/web-dvwa:latest localhost:${REGISTRY_PORT}/web-dvwa:latest
 ```
 
 **Step 2.** Push the container image to your container registry. 
 ```bash
-docker push localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0
+docker push localhost:${REGISTRY_PORT}/web-dvwa:latest
 ```
 
-You should get output similar to below.
-```
-The push refers to repository [localhost:5001/web-dvwa]
-deeea3c4d56f: Pushed 
-585e40f29c46: Pushed 
-73e92d5f2a6c: Pushed 
-9713610e6ec4: Pushed 
-acf8abb873ce: Pushed 
-97a1040801c3: Pushed 
-80f9a8427b18: Pushed 
-a75caa09eb1f: Pushed 
-v1.0.0: digest: sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7 size: 1997
-```
-
-**Step 3.** Query your container registry to confirm your container image has been uploaded. 
+**Step 3.** Query your container registry to verify your container image has been uploaded. 
 ```bash
 curl https://localhost:${REGISTRY_PORT}/v2/_catalog
 ```
@@ -387,17 +417,17 @@ You should get output similar to below.
 {"repositories":["web-dvwa"]}
 ```
 
-**Step 4.** Query your container registry to confirm which container image version was been uploaded. 
+**Step 4.** Query your container registry to verify the container image tag uploaded. 
 ```bash
 curl https://localhost:${REGISTRY_PORT}/v2/web-dvwa/tags/list
 ```
 
 You should get output similar to below.
 ```json
-{"name":"web-dvwa","tags":["v1.0.0"]}
+{"name":"web-dvwa","tags":["latest"]}
 ```
 
-## Create Attestations that Link the SBOM and VEX Documents to the Container Image
+## Create and Push Attestations that Link the SBOM and VEX Documents to the Container Image
 **Step 1.** Save the digest of the container image to an environment variable called `DIGEST`.
 ```bash
 export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0 | cut -d":" -f3)
@@ -497,6 +527,9 @@ kubectl describe pod demo-pod
 **Step 3.** Open a browser to [http://localhost:30000](http://localhost:30000) and confirm you're able to interact with the workload.
 
 ## References
+**Anchore: Open Source | Guides | Vulnerability Scanning | Filter scan results**  
+https://oss.anchore.com/docs/guides/vulnerability/filter-results/#product-identification
+
 **Cosign**  
 Cosign stores attestations as OCI artifacts associated with an image digest. Attestations are not part of the image layers.
 https://docs.sigstore.dev/cosign/verifying/attestation/
