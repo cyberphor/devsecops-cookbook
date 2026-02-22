@@ -5,10 +5,15 @@
 * [Deploy a Kubernetes Cluster](#deploy-a-kubernetes-cluster)
 * [Connect the Kubernetes Cluster to the Container Registry](#connect-the-kubernetes-cluster-to-the-container-registry)
 * [Install Kyverno on the Kubernetes Cluster](#install-kyverno-on-the-kubernetes-cluster)
-* [Create an SBOM and VEX Document](#create-an-sbom-and-vex-document)
-* [Tag and Push the Container Image to the Container Registry](#tag-and-push-the-container-image-to-the-container-registry)
-* [Create Attestations that Link the SBOM and VEX Documents to the Container Image](#create-attestations-that-link-the-sbom-and-vex-documents-to-the-container-image)
 * [Create and Apply a Kyverno Policy](#create-and-apply-a-kyverno-policy)
+* [Pull a Container Image](#pull-a-container-image)
+* [Create an SBOM](#create-an-sbom)
+* [Scan the SBOM](#scan-the-sbom)
+* [Identify Package URLs](#identify-package-urls)
+* [Create a VEX Document](#create-a-vex-document)
+* [Rescan the SBOM Using the VEX Document](#rescan-the-sbom-using-the-vex-document)
+* [Tag and Push the Container Image to the Container Registry](#tag-and-push-the-container-image-to-the-container-registry)
+* [Create and Push Attestations that Link the SBOM and VEX Documents to the Container Image](#create-and-push-attestations-that-link-the-sbom-and-vex-documents-to-the-container-image)
 * [Deploy a Container on the Kubernetes Cluster](#deploy-a-container-on-the-kubernetes-cluster)
 * [References](#references)
 
@@ -308,10 +313,10 @@ The output should be similar to below.
    └── ✔ File digests                    [9,458 files]
 ```
 
-## Scan the SBOM
-**Step 1.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
+## Scan the Container Image
+**Step 1.** Scan the container image for Common Vulnerabilities and Exposures (CVEs) using `grype`.
 ```bash
-grype sbom:sbom.json -o cyclonedx-json=scan.json
+grype vulnerables/web-dvwa:latest -o json=scan.json
 ```
 
 The output should be similar to below. Note the number of vulnerability matches (2097 in total). 
@@ -320,14 +325,32 @@ The output should be similar to below. Note the number of vulnerability matches 
    ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
 ```
 
-**Step 2.** Review the CVEs reported by `grype`. 
+## Identify Package URLs
+Package URLs (PURLs) are strings that follow a standardized, URL-based syntax that uniquely identifies software packages, independent of their ecosystem or distribution channel. According to [the Package URL (PURL) specification](https://github.com/package-url/purl-spec/blob/main/types-doc/oci-definition.md), the PURL format for OCI images is `pkg:oci/<image_name>@sha256%<image_digest>`. The `image_digest` can be found by running `docker inspect`. 
+
+**Step 1.** Save the digest of the container image to an environment variable. 
+```bash
+export IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' vulnerables/web-dvwa:latest | cut -d":" -f2)
+```
+
+**Step 2.** Print the environment variable to confirm the value returned by Docker.
+```bash
+echo $IMAGE_DIGEST
+```
+
+The output should be similar to below.
+```bash
+dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
+```
+
+**Step 3.** Review the CVEs reported by `grype`. 
 ```bash
 cat scan.json | jq '.vulnerabilities'
 ```
 
-**Step 3.** Pick a component and a CVE (e.g., `CVE-2019-11043`) Grype associated with it that you want to suppress. Then, run again Grype to get the Package URL its using for the component. 
+**Step 4.** Pick a component and a CVE (e.g., `CVE-2019-11043`) Grype associated with it that you want to suppress. Then, run again Grype to get the Package URL (PURL) its using for the component. 
 ```bash
-grype sbom:sbom.json -o json | jq -r '.matches[] | select(.vulnerability.id=="CVE-2019-11043") | .artifact.purl'
+grype vulnerables/web-dvwa:latest -o json | jq -r '.matches[] | select(.vulnerability.id=="CVE-2019-11043") | .artifact.purl'
 ```
 
 The output should be similar to below.
@@ -348,29 +371,12 @@ pkg:deb/debian/php7.0-xml@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=
 ```
 
 ## Create a VEX Document
-Vulnerability Exploitability Exchange (VEX) documents allow you to communicate the status of vulnerabilities in a machine-readable format that follows CISA minimum requirements. To create a VEX document, we will use `vexctl`. 
+Vulnerability Exploitability Exchange (VEX) documents allow you to communicate the status of vulnerabilities in a machine-readable format. `vexctl` is a tool for creating VEX documents. 
 
-According to [the Package URL (PURL) specification](https://github.com/package-url/purl-spec/blob/main/types-doc/oci-definition.md), the PURL format for OCI images is `pkg:oci/<image_name>@sha256%<image_digest>?repository_url=<repository_url>&tag=<tag>`. While getting the `image_name`, `repository_url`, and `tag` are self-explanatory, the `image_digest` can be found by running `docker inspect`. 
-
-**Step 1.** Save the digest of the container image to an environment variable. 
-```bash
-export IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' vulnerables/web-dvwa:latest | cut -d":" -f2)
-```
-
-**Step 2.** Print the environment variable to confirm the value returned by Docker.
-```bash
-echo $IMAGE_DIGEST
-```
-
-The output should be similar to below.
-```bash
-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
-```
-
-**Step 3.** Create a VEX document using the CVE in question, the PURL of the container image, and the PURL of the component in question.
+**Step 1.** Create a VEX document using the CVE in question, the PURL of the container image, and the PURL of the component in question.
 ```bash
 vexctl create \
-  --product="pkg:oci/web-dvwa@sha256%$IMAGE_DIGEST?repository_url=vulnerables&tag=latest" \
+  --product="pkg:oci/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7" \
   --vuln="CVE-2019-11043" \
   --subcomponents="pkg:deb/debian/libapache2-mod-php7.0@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0" \
   --status="not_affected" \
@@ -384,10 +390,10 @@ You should get output similar to below.
 > VEX document written to vex.json
 ```
 
-## Rescan the SBOM Using the VEX Document
-**Step 1.** Using `grype` and the VEX document as additional input, scan the SBOM again to suppress the CVE. 
+## Rescan the Container Image Using the VEX Document
+**Step 1.** Using `grype` and the VEX document as additional input, scan the container image again to suppress the CVE. 
 ```bash
-grype sbom:sbom.json --vex=vex.json -o cyclonedx-json=scan.json
+grype vulnerables/web-dvwa:latest --vex=vex.json -o json=scan.json
 ```
 
 You should get output similar to below. As you will see, the number of vulnerability matches went down from 2097 to 2096.
