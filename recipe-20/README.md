@@ -393,7 +393,7 @@ You should get output similar to below.
 ## Rescan the Container Image Using the VEX Document
 **Step 1.** Using `grype` and the VEX document as additional input, scan the container image again to suppress the CVE. 
 ```bash
-grype vulnerables/web-dvwa:latest --vex=vex.json -o json=scan.json
+grype vulnerables/web-dvwa:latest --vex=vex.json -o cyclonedx-json=scan.json
 ```
 
 You should get output similar to below. As you will see, the number of vulnerability matches went down from 2097 to 2096.
@@ -433,18 +433,21 @@ You should get output similar to below.
 {"name":"web-dvwa","tags":["latest"]}
 ```
 
-## Create and Push Attestations that Link the SBOM and VEX Documents to the Container Image
-**Step 1.** Save the digest of the container image to an environment variable called `DIGEST`.
+**Step 5.** Sign the image. 
 ```bash
-export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0 | cut -d":" -f3)
+cosign sign \
+  --key cosign.key \
+  -y \
+  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
-**Step 2.** Create another public and private key pair albeit for `cosign` to use. 
+## Create and Push Attestations that Link the SBOM and VEX Documents to the Container Image
+**Step 1.** Create another public and private key pair albeit for `cosign` to use. 
 ```bash
 cosign generate-key-pair
 ```
 
-**Step 3.** Create an attestation in the container registry, using `cosign`, that links the SBOM (e.g., `sbom.json`) to the container.image. 
+**Step 2.** Create an attestation in the container registry, using `cosign`, that links the SBOM (e.g., `sbom.json`) to the container.image. 
 ```bash
 cosign attest \
   --key cosign.key \
@@ -467,30 +470,7 @@ By typing 'y', you attest that (1) you are not submitting the personal data of a
 tlog entry created with index: 953290970
 ```
 
-**Step 4.** Create an attestation in the container registry, using `cosign`, that links the VEX document (e.g., `vex.json`) to the container.
-```bash
-cosign attest \
-  --key cosign.key \
-  --type openvex \
-  --predicate vex.json \
-  -y \
-  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
-```
-
-You should get output similar to below. 
-```
-Using payload from: vex.json
-
-    The sigstore service, hosted by sigstore a Series of LF Projects, LLC, is provided pursuant to the Hosted Project Tools Terms of Use, available at https://lfprojects.org/policies/hosted-project-tools-terms-of-use/.
-    Note that if your submission includes personal data associated with this signed artifact, it will be part of an immutable record.
-    This may include the email address associated with the account with which you authenticate your contractual Agreement.
-    This information will be used for signing this artifact and will be stored in public transparency logs and cannot be removed later, and is subject to the Immutable Record notice at https://lfprojects.org/policies/hosted-project-tools-immutable-records/.
-
-By typing 'y', you attest that (1) you are not submitting the personal data of any other person; and (2) you understand and agree to the statement and the Agreement terms at the URLs listed above.
-tlog entry created with index: 953290159
-```
-
-**Step 5.** Confirm the attestations exist for the container image in the container registry.
+**Step 4.** Confirm the attestations exist for the container image in the container registry.
 ```bash
 cosign tree localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
@@ -499,23 +479,14 @@ You should get output similar to below.
 ```
 📦 Supply Chain Security Related artifacts for an image: localhost:5001/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 └── 💾 Attestations for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.att
-   ├── 🍒 sha256:74926c7f6818c14e5267bc583e2eddd0b6f3bf3e372596fd61ac7db267d6612f
-   └── 🍒 sha256:b044887ff03a592f128cdbe5801c2bae705e1871421dc90dcc334d2f2f3950fe
+   ├── 🍒 sha256:ed5d19f583648f4d0ea8f8fce11220ce421923b6f69002a9bdb8f3806b3a4f7b
 ```
 
-**Step 6.** Verify the SBOM attestation.
+**Step 5.** Verify the SBOM attestation.
 ```bash
 cosign verify-attestation \
   --key cosign.pub \
   --type cyclonedx \
-  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
-```
-
-**Step 7.**  Verify the VEX attestation.
-```bash
-cosign verify-attestation \
-  --key cosign.pub \
-  --type openvex \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
