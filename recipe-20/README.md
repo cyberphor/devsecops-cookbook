@@ -11,6 +11,14 @@
 * [Create a VEX Document and Rescan the SBOM](#create-a-vex-document-and-rescan-the-sbom)
 * [Create Attestations that Link the SBOM and VEX Documents to the Container Image](#create-attestations-that-link-the-sbom-and-vex-documents-to-the-container-image)
 * [Create and Apply a Kyverno Policy](#create-and-apply-a-kyverno-policy)
+* [Pull a Container Image](#pull-a-container-image)
+* [Create an SBOM](#create-an-sbom)
+* [Scan the SBOM](#scan-the-sbom)
+* [Identify Package URLs](#identify-package-urls)
+* [Create a VEX Document](#create-a-vex-document)
+* [Rescan the SBOM Using the VEX Document](#rescan-the-sbom-using-the-vex-document)
+* [Tag and Push the Container Image to the Container Registry](#tag-and-push-the-container-image-to-the-container-registry)
+* [Create and Push Attestations that Link the SBOM and VEX Documents to the Container Image](#create-and-push-attestations-that-link-the-sbom-and-vex-documents-to-the-container-image)
 * [Deploy a Container on the Kubernetes Cluster](#deploy-a-container-on-the-kubernetes-cluster)
 * [References](#references)
 
@@ -222,7 +230,7 @@ helm repo add kyverno https://kyverno.github.io/kyverno/
 helm repo update
 ```
 
-**Step 1.** Either use the provided `kyverno-values.yaml` file or recreate it. 
+**Step 2.** Either use the provided `kyverno-values.yaml` file or recreate it. 
 ```bash
 vim kyverno-values.yaml
 ```
@@ -238,7 +246,7 @@ global:
         type: File
 ```
 
-**Step 2.** Install Kyverno on the Kubernetes cluster.
+**Step 3.** Install Kyverno on the Kubernetes cluster.
 ```bash
 helm install kyverno kyverno/kyverno \
   --create-namespace \
@@ -246,7 +254,7 @@ helm install kyverno kyverno/kyverno \
   -f kyverno-values.yaml
 ```
 
-**Step 3.** Wait for the Kyverno pods to start. 
+**Step 4.** Wait for the Kyverno pods to start. 
 ```bash
 kubectl -n kyverno get pods
 ```
@@ -266,7 +274,7 @@ kyverno-reports-controller-5dbc78665-t9ksf      1/1     Running   0          41s
 kubectl apply -f kyverno-policy.yaml
 ```
 
-You should get output similar to below.
+The output should be similar to below.
 ```
 clusterpolicy.kyverno.io/block-affected-vex created
 ```
@@ -295,12 +303,12 @@ docker.io/vulnerables/web-dvwa:latest
 
 **Step 2.** Tag the container image. 
 ```bash
-docker tag vulnerables/web-dvwa:latest localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0
+docker tag vulnerables/web-dvwa:latest localhost:${REGISTRY_PORT}/web-dvwa:latest
 ```
 
 **Step 3.** Push the container image to your container registry. 
 ```bash
-docker push localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0
+docker push localhost:${REGISTRY_PORT}/web-dvwa:latest
 ```
 
 You should get output similar to below.
@@ -327,14 +335,14 @@ You should get output similar to below.
 {"repositories":["web-dvwa"]}
 ```
 
-**Step 4.** Query your container registry to confirm which container image version was been uploaded. 
+**Step 4.** Query your container registry to verify the container image tag uploaded. 
 ```bash
 curl https://localhost:${REGISTRY_PORT}/v2/web-dvwa/tags/list
 ```
 
 You should get output similar to below.
 ```json
-{"name":"web-dvwa","tags":["v1.0.0"]}
+{"name":"web-dvwa","tags":["latest"]}
 ```
 
 **Step 5.** Save the digest of the container image to an environment variable called `DIGEST`.
@@ -516,8 +524,7 @@ You should get output similar to below.
 ```
 📦 Supply Chain Security Related artifacts for an image: localhost:5001/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 └── 💾 Attestations for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.att
-   ├── 🍒 sha256:74926c7f6818c14e5267bc583e2eddd0b6f3bf3e372596fd61ac7db267d6612f
-   └── 🍒 sha256:b044887ff03a592f128cdbe5801c2bae705e1871421dc90dcc334d2f2f3950fe
+   ├── 🍒 sha256:ed5d19f583648f4d0ea8f8fce11220ce421923b6f69002a9bdb8f3806b3a4f7b
 ```
 
 **Step 5.** Verify the SBOM attestation.
@@ -550,6 +557,9 @@ kubectl describe pod demo-pod
 **Step 3.** Open a browser to [http://localhost:30000](http://localhost:30000) and confirm you're able to interact with the workload.
 
 ## References
+**Anchore: Open Source | Guides | Vulnerability Scanning | Filter scan results**  
+https://oss.anchore.com/docs/guides/vulnerability/filter-results/#product-identification
+
 **Cosign**  
 Cosign stores attestations as OCI artifacts associated with an image digest. Attestations are not part of the image layers.
 https://docs.sigstore.dev/cosign/verifying/attestation/

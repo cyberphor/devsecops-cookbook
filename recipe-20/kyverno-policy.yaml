@@ -18,13 +18,17 @@ spec:
           data:
             | 
             -----BEGIN PUBLIC KEY-----
-            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9QlAbbOJ7JcXXFRVvGnyaBeaZ/9k
-            h+pme/+5e5hW+2+zYyWYlQ3wRS8FtrMdlC8qyTJPjpo4MimZArbL4rYhNw==
+            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEGHHI1WgulOlC6TLXZURascLO9zmN
+            EF0fZkPbu7rJd0XAHdmAjl0pW6W7n3lCGqK4AzJAKEOmC/xAaC8fkiCMsA==
             -----END PUBLIC KEY-----
   attestations:
     - name: sbom 
       referrer: 
-        type: https://cyclonedx.org/schema/bom-1.4
+        type: sbom/cyclonedx
+      attestors:
+        - cosign
   validations:
-    - expression: "has(attestations.sbom)"
-      message: "The image must have a signed CycloneDX SBOM attestation."
+    - expression: images.containers.map(image, verifyImageSignatures(image, [attestors.cosign])).all(e ,e > 0)
+      message: All images must be signed by a trusted agent.
+    - expression: has(attestations.sbom)
+      message: All images must have a SBOM.

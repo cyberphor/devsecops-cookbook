@@ -8,7 +8,7 @@ metadata:
 spec:
   containers:
   - name: dvwa
-    image: demo-registry:5000/web-dvwa:v1.0.0
+    image: demo-registry:5000/web-dvwa:latest
 
 ---
 apiVersion: v1
