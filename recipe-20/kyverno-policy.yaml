@@ -25,8 +25,6 @@ spec:
     - name: sbom 
       referrer: 
         type: sbom/cyclonedx
-      attestors:
-        - cosign
   validations:
     - expression: images.containers.map(image, verifyImageSignatures(image, [attestors.cosign])).all(e ,e > 0)
       message: All images must be signed by a trusted agent.

@@ -314,15 +314,15 @@ docker push localhost:${REGISTRY_PORT}/web-dvwa:latest
 You should get output similar to below.
 ```
 The push refers to repository [localhost:5001/web-dvwa]
-6cff5f35147f: Pushed 
-3e17c6eae66c: Pushed 
-0c57df616dbf: Pushed 
-2cd72dba8257: Pushed 
-098cffd43466: Pushed 
-b3d64a33242d: Pushed 
-eb05d18be401: Pushed 
-e9968e5981d2: Pushed 
-v1.0.0: digest: sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7 size: 1997
+deeea3c4d56f: Pushed 
+585e40f29c46: Pushed 
+73e92d5f2a6c: Pushed 
+9713610e6ec4: Pushed 
+acf8abb873ce: Pushed 
+97a1040801c3: Pushed 
+80f9a8427b18: Pushed 
+a75caa09eb1f: Pushed 
+latest: digest: sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7 size: 1997
 ```
 
 **Step 4.** Query your container registry to confirm your container image has been uploaded. 
@@ -347,7 +347,7 @@ You should get output similar to below.
 
 **Step 5.** Save the digest of the container image to an environment variable called `DIGEST`.
 ```bash
-export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0 | cut -d":" -f2)
+export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:latest | cut -d":" -f2)
 ```
 
 To look at the digest, run the command below. 
@@ -363,39 +363,25 @@ dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 ## Create an SBOM
 **Step 1.** Create an SBOM for the container image using `syft`.
 ```bash
-syft localhost:${REGISTRY_PORT}/web-dvwa:v1.0.0 -o cyclonedx-json=sbom.json
+syft localhost:${REGISTRY_PORT}/web-dvwa:latest -o cyclonedx-json=sbom.json
 ```
 
 You should get output similar to below. 
 ```
- ✔ Loaded image                                                                                                       localhost:5001/web-dvwa:v1.0.0 
- ✔ Parsed image                                                               ha256:ab0d83586b6e8799bb549ab91914402e47e3bcc7eea0c5cdf43755d56150cc6a 
- ✔ Cataloged contents                                                               57ccc369ab5ae7ddfb8af89d2b2ab4b4e64a9d391ba2fc84952998a3044ffc42 
+ ✔ Loaded image                                                                                    localhost:5001/web-dvwa:latest 
+ ✔ Parsed image                                           sha256:ab0d83586b6e8799bb549ab91914402e47e3bcc7eea0c5cdf43755d56150cc6a 
+ ✔ Cataloged contents                                            738614d5cf55eef7c055a83881c558b6fc9188c6da94956da63132c04afff180 
    ├── ✔ Packages                        [221 packages]  
    ├── ✔ Executables                     [1,132 executables]  
    ├── ✔ File metadata                   [9,458 locations]  
-   └── ✔ File digests                    [9,458 files]   
-```
-
-**Step 2.** Extract the digest of the image using `jq`. 
-```bash
-export IMAGE_DIGEST=$(cat sbom.json | jq -r '.metadata.component["bom-ref"]')
-```
-
-**Step 3.** Make sure the variable was actually initialized with a valid string. 
-```bash
-echo $IMAGE_DIGEST
-```
-
-You should get output similar to below. 
-```
-370f610181ad1d37
+   └── ✔ File digests                    [9,458 files]  
+A newer version of syft is available for download: 1.42.1 (installed version is 1.41.1)   
 ```
 
 ## Scan the SBOM
 **Step 1.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
 ```bash
-grype sbom:sbom.json -o cyclonedx-json=scan.json
+grype sbom:sbom.json -o json=scan.json
 ```
 
 You should get output similar to below. Note the number of vulnerability matches (2097 in total). 
@@ -435,10 +421,10 @@ pkg:deb/debian/php7.0-readline@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upst
 pkg:deb/debian/php7.0-xml@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0
 ```
 
-**Step 2.** Create a VEX document using your product PURL, component PURL, and CVE. For products that are containers, the PURL format is `pkg:oci/<image-name>@sha256%<image-digest>?tag=<tag>`. For example, the PURL for `v1.0.0` of the `web-dvwa` container image is `pkg:oci/web-dvwa@sha256%370f610181ad1d37?tag=v1.0.0`.
+**Step 2.** Create a VEX document using your product PURL, component PURL, and CVE. For products that are containers, the PURL format is `pkg:oci/<image-name>@sha256%<image-digest>?tag=<tag>`. For example, the product PURL for the `latest` tag of the `web-dvwa` container image is `pkg:oci/web-dvwa@sha256:${DIGEST}`.
 ```bash
 vexctl create \
-  --product="pkg:oci/web-dvwa@sha256%${IMAGE_DIGEST}?tag=v1.0.0" \
+  --product="pkg:oci/web-dvwa@sha256:${DIGEST}" \
   --subcomponents="pkg:deb/debian/libapache2-mod-php7.0@7.0.30-0%2Bdeb9u1?arch=amd64&distro=debian-9&upstream=php7.0" \
   --vuln="CVE-2019-11043" \
   --status="not_affected" \
@@ -454,7 +440,7 @@ You should get output similar to below.
 
 **Step 3.** Using the VEX document as additional input, scan the SBOM again to verify the CVE gets suppressed (the command below will cause your previous `scan.json` to be overwritten). 
 ```bash
-grype sbom:sbom.json --vex=vex.json -o cyclonedx-json=scan.json
+grype sbom:sbom.json --vex=vex.json -o json=scan.json
 ```
 
 You should get output similar to below. As you will see, the number of vulnerability matches went down from 2097 to 2096.
@@ -492,29 +478,6 @@ By typing 'y', you attest that (1) you are not submitting the personal data of a
 tlog entry created with index: 953290970
 ```
 
-**Step 3.** Create an attestation in the container registry, using `cosign`, that links the VEX document (e.g., `vex.json`) to the container.
-```bash
-cosign attest \
-  --key cosign.key \
-  --type openvex \
-  --predicate vex.json \
-  -y \
-  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
-```
-
-You should get output similar to below. 
-```
-Using payload from: vex.json
-
-    The sigstore service, hosted by sigstore a Series of LF Projects, LLC, is provided pursuant to the Hosted Project Tools Terms of Use, available at https://lfprojects.org/policies/hosted-project-tools-terms-of-use/.
-    Note that if your submission includes personal data associated with this signed artifact, it will be part of an immutable record.
-    This may include the email address associated with the account with which you authenticate your contractual Agreement.
-    This information will be used for signing this artifact and will be stored in public transparency logs and cannot be removed later, and is subject to the Immutable Record notice at https://lfprojects.org/policies/hosted-project-tools-immutable-records/.
-
-By typing 'y', you attest that (1) you are not submitting the personal data of any other person; and (2) you understand and agree to the statement and the Agreement terms at the URLs listed above.
-tlog entry created with index: 953290159
-```
-
 **Step 4.** Confirm the attestations exist for the container image in the container registry.
 ```bash
 cosign tree localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
@@ -524,7 +487,7 @@ You should get output similar to below.
 ```
 📦 Supply Chain Security Related artifacts for an image: localhost:5001/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 └── 💾 Attestations for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.att
-   ├── 🍒 sha256:ed5d19f583648f4d0ea8f8fce11220ce421923b6f69002a9bdb8f3806b3a4f7b
+   └── 🍒 sha256:7589a314742c586ffb9b77a1a36268cb0b942df8d1910a442e7509771a6563c1
 ```
 
 **Step 5.** Verify the SBOM attestation.
@@ -532,14 +495,6 @@ You should get output similar to below.
 cosign verify-attestation \
   --key cosign.pub \
   --type cyclonedx \
-  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
-```
-
-**Step 6.**  Verify the VEX attestation.
-```bash
-cosign verify-attestation \
-  --key cosign.pub \
-  --type openvex \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
