@@ -363,7 +363,7 @@ dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 ## Create an SBOM
 **Step 1.** Create an SBOM for the container image using `syft`.
 ```bash
-syft localhost:${REGISTRY_PORT}/web-dvwa:latest -o cyclonedx-json=sbom.json
+syft localhost:${REGISTRY_PORT}/web-dvwa:latest -o json=sbom.json
 ```
 
 You should get output similar to below. 
@@ -381,7 +381,7 @@ A newer version of syft is available for download: 1.42.1 (installed version is 
 ## Scan the SBOM
 **Step 1.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
 ```bash
-grype sbom:sbom.json -o json=scan.json
+grype sbom.json -o json=scan.json
 ```
 
 You should get output similar to below. Note the number of vulnerability matches (2097 in total). 
@@ -400,7 +400,7 @@ cat scan.json | jq '.vulnerabilities'
 ## Create a VEX Document and Rescan the SBOM
 **Step 1.** Pick a component and a CVE (e.g., `CVE-2019-11043`) Grype associated with it that you want to suppress. Then, run Grype again, but pipe its output to `jq` to get the Package URL its using for the component you want to suppress. 
 ```bash
-grype sbom:sbom.json -o json | jq -r '.matches[] | select(.vulnerability.id=="CVE-2019-11043") | .artifact.purl'
+grype sbom.json -o json | jq -r '.matches[] | select(.vulnerability.id=="CVE-2019-11043") | .artifact.purl'
 ```
 
 You should get output similar to below.
@@ -440,7 +440,7 @@ You should get output similar to below.
 
 **Step 3.** Using the VEX document as additional input, scan the SBOM again to verify the CVE gets suppressed (the command below will cause your previous `scan.json` to be overwritten). 
 ```bash
-grype sbom:sbom.json --vex=vex.json -o json=scan.json
+grype sbom.json --vex=vex.json -o json=scan.json
 ```
 
 You should get output similar to below. As you will see, the number of vulnerability matches went down from 2097 to 2096.
