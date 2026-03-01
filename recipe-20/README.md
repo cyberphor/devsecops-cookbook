@@ -276,7 +276,7 @@ kubectl apply -f kyverno-policy.yaml
 
 The output should be similar to below.
 ```
-clusterpolicy.kyverno.io/block-affected-vex created
+clusterpolicy.kyverno.io/check-images created
 ```
 
 ## Tag and Push the Container Image to the Container Registry
@@ -440,7 +440,7 @@ You should get output similar to below.
 
 **Step 3.** Using the VEX document as additional input, scan the SBOM again to verify the CVE gets suppressed (the command below will cause your previous `scan.json` to be overwritten). 
 ```bash
-grype sbom.json --vex=vex.json -o json=scan.json
+grype sbom.json --vex=vex.json -o json=raw-scan.json
 ```
 
 You should get output similar to below. As you will see, the number of vulnerability matches went down from 2097 to 2096.
@@ -449,13 +449,46 @@ You should get output similar to below. As you will see, the number of vulnerabi
    ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
 ```
 
-## Create Attestations that Link the SBOM and VEX Documents to the Container Image
+**Step 4.** Text goes here. https://github.com/sigstore/cosign/blob/main/specs/COSIGN_VULN_ATTESTATION_SPEC.md
+```bash
+jq '{
+  "invocation": {
+    "parameters": [],
+    "uri": "https://github.com/anchore/grype",
+    "event_id": "",
+    "builder.id": ""
+  },
+  "scanner": {
+    "uri": "pkg:github/anchore/grype@v0.107.0",
+    "version": .descriptor.version,
+    "db": {
+      "uri": "",
+      "version": .descriptor.db.built
+    },
+    "result": .
+  },
+  "metadata": {
+    "scanStartedOn": .descriptor.timestamp,
+    "scanFinishedOn": .descriptor.timestamp
+  }
+}' raw-scan.json > scan.json
+```
+
+## Create Attestations that Link the SBOM to the Container Image
 **Step 1.** Create another public and private key pair albeit for `cosign` to use. 
 ```bash
 cosign generate-key-pair
 ```
 
-**Step 2.** Create an attestation in the container registry, using `cosign`, that links the SBOM (e.g., `sbom.json`) to the container.image. 
+**Step 2.** Sign the container image.
+```bash
+cosign sign \
+  --key cosign.key \
+  -y \
+  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+**Step 3.** Create an attestation in the container registry, using `cosign`, that links the SBOM (e.g., `sbom.json`) to the container.image. 
 ```bash
 cosign attest \
   --key cosign.key \
@@ -495,6 +528,16 @@ You should get output similar to below.
 cosign verify-attestation \
   --key cosign.pub \
   --type cyclonedx \
+  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+**Step 6.** Text goes here.
+```bash
+cosign attest \
+  --key cosign.key \
+  --type vuln \
+  --predicate scan.json \
+  -y \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 

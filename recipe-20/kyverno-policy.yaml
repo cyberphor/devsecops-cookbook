@@ -18,15 +18,30 @@ spec:
           data:
             | 
             -----BEGIN PUBLIC KEY-----
-            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEGHHI1WgulOlC6TLXZURascLO9zmN
-            EF0fZkPbu7rJd0XAHdmAjl0pW6W7n3lCGqK4AzJAKEOmC/xAaC8fkiCMsA==
+            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4K8+neDxDrnYWOeqmnKVDpsDJXzb
+            L8O3LBpjR09a6KOFOaNWK3ah+cWWexgGjPNpiNahWO2gf1MOFFQXEYvHyQ==
             -----END PUBLIC KEY-----
   attestations:
-    - name: sbom 
-      referrer: 
-        type: sbom/cyclonedx
+    - name: sbom
+      intoto:
+        type: https://cyclonedx.org/bom
+    - name: scan
+      intoto:
+        type: https://cosign.sigstore.dev/attestation/vuln/v1
   validations:
     - expression: images.containers.map(image, verifyImageSignatures(image, [attestors.cosign])).all(e ,e > 0)
       message: All images must be signed by a trusted agent.
     - expression: has(attestations.sbom)
       message: All images must have a SBOM.
+    - expression: images.containers.map(image, verifyAttestationSignatures(image, attestations.sbom, [attestors.cosign])).all(e, e > 0)
+      message: All SBOMs must be signed by a trusted agent.
+    - expression: has(attestations.scan)
+      message: All images must have a scan.
+    - expression: images.containers.map(image, verifyAttestationSignatures(image, attestations.scan, [attestors.cosign])).all(e, e > 0)
+      message: All scans must be signed by a trusted agent.
+    - expression: >
+        images.containers.map(image, 
+          extractPayload(image, attestations.scan).predicate.scanner.result.matches
+          .filter(m, m.vulnerability.severity == "Critical").size() <= 327
+        ).all(e, e)
+      message: Images with greater than or equal to 327 critical CVEs are prohibited.
