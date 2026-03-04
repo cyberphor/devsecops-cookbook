@@ -19,7 +19,7 @@
 17. [Terraform Templating](/recipe-17/)
 18. [Full-Stack Application (React, Material UI, Vite, Nginx, PostgreSQL, and Django) with a Content Security Policy](/recipe-19/README.md)
 19. [Recipe 19](/recipe-19/)
-20. [Policy-as-Code](/recipe-20/)
+20. [Using Container Attestations to Enforce Policy-as-Code](/recipe-20/)
 
 ### Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)
