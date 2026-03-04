@@ -1,25 +1,18 @@
-## Recipe 20: Policy-as-Code
+## Recipe 20: Using Container Attestations to Enforce Policy-as-Code
 * [Setup](#setup)
 * [Initialize Your Environment Variables](#initialize-your-environment-variables)
 * [Deploy a Container Registry](#deploy-a-container-registry)
 * [Deploy a Kubernetes Cluster](#deploy-a-kubernetes-cluster)
 * [Connect the Kubernetes Cluster to the Container Registry](#connect-the-kubernetes-cluster-to-the-container-registry)
 * [Install Kyverno on the Kubernetes Cluster](#install-kyverno-on-the-kubernetes-cluster)
-* [Tag and Push the Container Image to the Container Registry](#tag-and-push-the-container-image-to-the-container-registry)
+* [Create a Key Pair for `cosign`](#create-a-key-pair-for-cosign)
+* [Create and Apply a Kyverno Policy](#create-and-apply-a-kyverno-policy)
+* [Pull, Tag, and Push a Container Image to the Container Registry](#pull-tag-and-push-a-container-image-to-the-container-registry)
 * [Create an SBOM](#create-an-sbom)
 * [Scan the SBOM](#scan-the-sbom)
 * [Create a VEX Document and Rescan the SBOM](#create-a-vex-document-and-rescan-the-sbom)
-* [Create Attestations that Link the SBOM and VEX Documents to the Container Image](#create-attestations-that-link-the-sbom-and-vex-documents-to-the-container-image)
-* [Create and Apply a Kyverno Policy](#create-and-apply-a-kyverno-policy)
-* [Pull a Container Image](#pull-a-container-image)
-* [Create an SBOM](#create-an-sbom)
-* [Scan the SBOM](#scan-the-sbom)
-* [Identify Package URLs](#identify-package-urls)
-* [Create a VEX Document](#create-a-vex-document)
-* [Rescan the SBOM Using the VEX Document](#rescan-the-sbom-using-the-vex-document)
-* [Tag and Push the Container Image to the Container Registry](#tag-and-push-the-container-image-to-the-container-registry)
-* [Create and Push Attestations that Link the SBOM and VEX Documents to the Container Image](#create-and-push-attestations-that-link-the-sbom-and-vex-documents-to-the-container-image)
-* [Deploy a Container on the Kubernetes Cluster](#deploy-a-container-on-the-kubernetes-cluster)
+* [Create Attestations that Link the SBOM and Scan to the Container Image](#create-attestations-that-link-the-sbom-and-scan-to-the-container-image)
+* [Deploy the Container Image on the Kubernetes Cluster](#deploy-the-container-image-onto-the-kubernetes-cluster)
 * [References](#references)
 
 ## Setup
@@ -194,35 +187,6 @@ You should get output similar to below. Pay special attention to the IPv4 `Subne
 docker network connect kind ${REGISTRY_NAME}
 ```
 
-**Step 3.** Inspect your container registry's network configuration for what is has with regards to your Kubernetes cluster.  
-```bash
-docker inspect ${REGISTRY_NAME} -f='{{json .NetworkSettings.Networks}}' | jq ".kind"
-```
-
-You should get output similar to below. Specifically, you should see your container registry how has an IP address (e.g., `172.18.0.5`) in same network as your Kubernetes cluster (e.g., `172.18.0.0/16`).
-```json
-{
-  "IPAMConfig": {},
-  "Links": null,
-  "Aliases": [],
-  "DriverOpts": {},
-  "GwPriority": 0,
-  "NetworkID": "531abfad301d29b4f3954a8e00759b7019ccd268d829d03efdbe8c91cdd77163",
-  "EndpointID": "91eba567e21493be9fb151c962bd50678e77eda2d7bdd4bf3b9026c67844353b",
-  "Gateway": "172.18.0.1",
-  "IPAddress": "172.18.0.5",
-  "MacAddress": "3a:32:cc:74:1c:02",
-  "IPPrefixLen": 16,
-  "IPv6Gateway": "fc00:f853:ccd:e793::1",
-  "GlobalIPv6Address": "fc00:f853:ccd:e793::5",
-  "GlobalIPv6PrefixLen": 64,
-  "DNSNames": [
-    "demo-registry",
-    "f26a00759bb5"
-  ]
-}
-```
-
 ## Install Kyverno on the Kubernetes Cluster
 **Step 1.** Add the URL for the Kyverno Helm chart repo to your local Helm configuration.
 ```bash
@@ -230,12 +194,7 @@ helm repo add kyverno https://kyverno.github.io/kyverno/
 helm repo update
 ```
 
-**Step 2.** Either use the provided `kyverno-values.yaml` file or recreate it. 
-```bash
-vim kyverno-values.yaml
-```
-
-Make sure the content below is in the file. This will ensure the `ca-certificates.crt` file of the node each Kyverno pod is running on is mounted as a file volume. 
+**Step 2.** Either use the provided `kyverno-values.yaml` file or recreate it. If you recreate it, make sure the content below is in the file. This will ensure the `ca-certificates.crt` file of the node each Kyverno pod is running on is mounted as a file volume. 
 ```yaml
 ---
 global:
@@ -268,6 +227,14 @@ kyverno-cleanup-controller-6bcc48b5-k4c2k       1/1     Running   0          41s
 kyverno-reports-controller-5dbc78665-t9ksf      1/1     Running   0          41s
 ```
 
+## Create a Key Pair for `cosign`
+**Step 1.** Create another public and private key pair albeit for `cosign` to use. 
+```bash
+cosign generate-key-pair
+```
+
+**Step 2.** Replace the public key in the provided Kyverno policy with the one generated in the previous step.
+
 ## Create and Apply a Kyverno Policy
 **Step 1.** Apply a Kyverno policy to the Kubernetes cluster.
 ```bash
@@ -279,7 +246,7 @@ The output should be similar to below.
 clusterpolicy.kyverno.io/check-images created
 ```
 
-## Tag and Push the Container Image to the Container Registry
+## Pull, Tag, and Push a Container Image to the Container Registry
 **Step 1.** Pull a container image. 
 ```bash
 docker pull vulnerables/web-dvwa:latest
@@ -335,16 +302,6 @@ You should get output similar to below.
 {"repositories":["web-dvwa"]}
 ```
 
-**Step 4.** Query your container registry to verify the container image tag uploaded. 
-```bash
-curl https://localhost:${REGISTRY_PORT}/v2/web-dvwa/tags/list
-```
-
-You should get output similar to below.
-```json
-{"name":"web-dvwa","tags":["latest"]}
-```
-
 **Step 5.** Save the digest of the container image to an environment variable called `DIGEST`.
 ```bash
 export DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' localhost:${REGISTRY_PORT}/web-dvwa:latest | cut -d":" -f2)
@@ -381,7 +338,7 @@ A newer version of syft is available for download: 1.42.1 (installed version is 
 ## Scan the SBOM
 **Step 1.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
 ```bash
-grype sbom.json -o json=scan.json
+grype sbom.json -o json=raw-scan.json
 ```
 
 You should get output similar to below. Note the number of vulnerability matches (2097 in total). 
@@ -392,9 +349,9 @@ You should get output similar to below. Note the number of vulnerability matches
    └── by status:   1362 fixed, 735 not-fixed, 0 ignored 
 ```
 
-**Step 3.** Review the CVEs reported by `grype` using `jq`. 
+**Step 2.** Review the CVEs reported by `grype` using `jq`. 
 ```bash
-cat scan.json | jq '.vulnerabilities'
+cat raw-scan.json | jq '.vulnerabilities'
 ```
 
 ## Create a VEX Document and Rescan the SBOM
@@ -438,9 +395,9 @@ You should get output similar to below.
 > VEX document written to vex.json
 ```
 
-**Step 3.** Using the VEX document as additional input, scan the SBOM again to verify the CVE gets suppressed (the command below will cause your previous `scan.json` to be overwritten). 
+**Step 3.** Using the VEX document as additional input, scan the SBOM again to verify the CVE gets suppressed. 
 ```bash
-grype sbom.json --vex=vex.json -o json=raw-scan.json
+grype sbom.json --vex=vex.json -o json=updated-scan.json
 ```
 
 You should get output similar to below. As you will see, the number of vulnerability matches went down from 2097 to 2096.
@@ -449,7 +406,7 @@ You should get output similar to below. As you will see, the number of vulnerabi
    ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
 ```
 
-**Step 4.** Text goes here. https://github.com/sigstore/cosign/blob/main/specs/COSIGN_VULN_ATTESTATION_SPEC.md
+**Step 4.** Prepend the metadata below to the `updated-scan.json` file created in the previous step to ensure the specific attestation follows the vulnerability attestation specification maintained by [`sigstore`](https://github.com/sigstore/cosign/blob/main/specs/COSIGN_VULN_ATTESTATION_SPEC.md).
 ```bash
 jq '{
   "invocation": {
@@ -471,16 +428,11 @@ jq '{
     "scanStartedOn": .descriptor.timestamp,
     "scanFinishedOn": .descriptor.timestamp
   }
-}' raw-scan.json > scan.json
+}' updated-scan.json > scan.json
 ```
 
-## Create Attestations that Link the SBOM to the Container Image
-**Step 1.** Create another public and private key pair albeit for `cosign` to use. 
-```bash
-cosign generate-key-pair
-```
-
-**Step 2.** Sign the container image.
+## Create Attestations that Link the SBOM and Scan to the Container Image
+**Step 1.** Sign the container image.
 ```bash
 cosign sign \
   --key cosign.key \
@@ -488,7 +440,7 @@ cosign sign \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
-**Step 3.** Create an attestation in the container registry, using `cosign`, that links the SBOM (e.g., `sbom.json`) to the container.image. 
+**Step 2.** Use `cosign` to create an attestation in the container registry that links the SBOM (e.g., `sbom.json`) to the container.image. 
 ```bash
 cosign attest \
   --key cosign.key \
@@ -511,27 +463,7 @@ By typing 'y', you attest that (1) you are not submitting the personal data of a
 tlog entry created with index: 953290970
 ```
 
-**Step 4.** Confirm the attestations exist for the container image in the container registry.
-```bash
-cosign tree localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
-```
-
-You should get output similar to below.
-```
-📦 Supply Chain Security Related artifacts for an image: localhost:5001/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
-└── 💾 Attestations for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.att
-   └── 🍒 sha256:7589a314742c586ffb9b77a1a36268cb0b942df8d1910a442e7509771a6563c1
-```
-
-**Step 5.** Verify the SBOM attestation.
-```bash
-cosign verify-attestation \
-  --key cosign.pub \
-  --type cyclonedx \
-  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
-```
-
-**Step 6.** Text goes here.
+**Step 3.**  Use `cosign` to create an attestation in the container registry that links the CVE scan (e.g., `scan.json`) to the container.
 ```bash
 cosign attest \
   --key cosign.key \
@@ -541,18 +473,134 @@ cosign attest \
   localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
 ```
 
-## Deploy a Container on the Kubernetes Cluster
-**Step 1.** Deploy a workload on your Kubernetes cluster that uses your container image. 
+**Step 4.** Confirm the attestations exist for the container image in the container registry.
+```bash
+cosign tree localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+You should get output similar to below.
+```
+📦 Supply Chain Security Related artifacts for an image: localhost:5001/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
+└── 🔐 Signatures for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.sig
+   └── 🍒 sha256:8ede596696d9d6834284b8346a90658761707831e4922bee36eef35af9fa30cd
+└── 💾 Attestations for an image tag: localhost:5001/web-dvwa:sha256-dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7.att
+   ├── 🍒 sha256:0284de1ad7f58f3f22d179b225710e1956f017d216b9e3b02b013da961472736
+   └── 🍒 sha256:0e016e70798e317fdeeab768f24d65c6f87405b0c05344a42f574ab31ed7dab3
+```
+
+**Step 4.** Verify the SBOM attestation using the public key (`cosign.pub`) created earlier.
+```bash
+cosign verify-attestation \
+  --key cosign.pub \
+  --type cyclonedx \
+  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+**Step 5.** Verify the CVE scan attestation using the public key (`cosign.pub`) created earlier. 
+```bash
+cosign verify-attestation \
+  --key cosign.pub \
+  --type vuln \
+  localhost:${REGISTRY_PORT}/web-dvwa@sha256:${DIGEST}
+```
+
+Kyverno will perform the same verifications when an attempt to deploy the container image is made.
+
+## Deploy the Container Image onto the Kubernetes Cluster
+**Step 1.** Try to deploy a workload on your Kubernetes cluster that uses your container image. 
 ```bash
 kubectl apply -f app.yaml
 ```
 
-**Step 2.** Check on the health of the workload using the command below. 
+The output should be similiar to below. 
+```
+Error from server: error when creating "app.yaml": admission webhook "ivpol.validate.kyverno.svc-fail" denied the request: Policy check-images failed: Images with greater than or equal to 325 critical CVEs are prohibited.
+```
+
+**Step 2.** Modify the provided `kyverno-policy.yml` so it accepts more risk (i.e., greater than 325 critical CVEs). Then, apply the Kyverno policy update.
+```bash
+kubectl apply -f kyverno-policy.yaml
+```
+
+The output should be similiar to below. 
+```
+imagevalidatingpolicy.policies.kyverno.io/check-images configured
+```
+
+**Step 3.** Deploy a workload on your Kubernetes cluster that uses your container image. 
+```bash
+kubectl apply -f app.yaml
+```
+
+The output should be similiar to below. 
+```
+pod/demo-pod created
+service/demo-service created
+```
+
+**Step 4.** Check on the health of the workload using the command below. 
 ```bash
 kubectl describe pod demo-pod
 ```
 
-**Step 3.** Open a browser to [http://localhost:30000](http://localhost:30000) and confirm you're able to interact with the workload.
+The output should be similiar to below. 
+```
+Name:             demo-pod
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             demo-cluster-worker2/172.18.0.4
+Start Time:       Tue, 03 Mar 2026 21:32:01 -0500
+Labels:           app=dvwa
+Annotations:      kyverno.io/image-verification-outcomes:
+                    {"check-images":{"name":"check-images","ruleType":"ImageVerify","message":"success","status":"pass"}}
+Status:           Running
+IP:               10.244.1.6
+IPs:
+  IP:  10.244.1.6
+Containers:
+  dvwa:
+    Container ID:   containerd://894f57e33bfe8405618614f9e26367abd84058efdff98a14fa737a35756d7560
+    Image:          demo-registry:5000/web-dvwa:latest
+    Image ID:       demo-registry:5000/web-dvwa@sha256:dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Tue, 03 Mar 2026 21:32:02 -0500
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-5tsx2 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-5tsx2:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  33s   default-scheduler  Successfully assigned default/demo-pod to demo-cluster-worker2
+  Normal  Pulling    33s   kubelet            spec.containers{dvwa}: Pulling image "demo-registry:5000/web-dvwa:latest"
+  Normal  Pulled     33s   kubelet            spec.containers{dvwa}: Successfully pulled image "demo-registry:5000/web-dvwa:latest" in 86ms (86ms including waiting). Image size: 178370991 bytes.
+  Normal  Created    33s   kubelet            spec.containers{dvwa}: Created container: dvwa
+  Normal  Started    32s   kubelet            spec.containers{dvwa}: Started container dvwa
+```
+
+**Step 5.** Open a browser to [http://localhost:30000](http://localhost:30000) and confirm you're able to interact with the workload.
 
 ## References
 **Anchore: Open Source | Guides | Vulnerability Scanning | Filter scan results**  
