@@ -1,4 +1,4 @@
-## Setup Guides
+# Setup Guides
 
 ## How to Create SSH Keys 
 **Step 1.** Generate an SSH key pair.  
@@ -45,7 +45,7 @@ cat ~/.ssh/id_rsa.pub
 
 **Step 7.** Click "Add SSH key."
 
-### How to Create a GitHub Personal Access Token
+## How to Create a GitHub Personal Access Token
 **Step 1.** Login to GitHub.  
 
 **Step 2.** Click your profile (top-right icon) and click "Settings."  
@@ -64,7 +64,7 @@ cat ~/.ssh/id_rsa.pub
 
 **Step 9.** Click "Generate token."  
 
-### How to Create an Azure DevOps Personal Access Token
+## How to Create an Azure DevOps Personal Access Token
 **Step 1.** Browse to [http://dev.azure.com/](http://dev.azure.com/).  
 
 **Step 2.** Click your Azure DevOps project.  
@@ -85,7 +85,7 @@ cat ~/.ssh/id_rsa.pub
 
 **Step 10.** Record your PAT and use it as necessary.
 
-### How to Install the Azure CLI
+## How to Install the Azure CLI
 **Step 1.** Enter the command below. 
 ```bash
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
@@ -108,7 +108,7 @@ az login --tenant "${TENANT_ID}" --use-device-code
 az account set --subscription "${SUBSCRIPTION_ID}"
 ```
 
-### How to Install Terraform
+## How to Install Terraform
 **Step 1.** Install the following packages if not already done: `gnupg`, `software-properties-common`, and `curl`. They are required to verify the identity of HashiCorp's package repository. 
 ```bash
 sudo apt-get update 
@@ -146,7 +146,7 @@ sudo apt update
 sudo apt install terraform
 ```
 
-### How to Install Ansible
+## How to Install Ansible
 **Step 1.** Install Ansible.
 ```bash
 sudo apt update
@@ -155,7 +155,7 @@ sudo add-apt-repository --yes --update ppa:ansible/ansible
 sudo apt install ansible
 ```
 
-### How to Install sqlcmd
+## How to Install sqlcmd
 **Step 1.** Import the GPG keys for Microsoft's Ubuntu package repository.
 ```bash
 sudo su
@@ -184,7 +184,7 @@ echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### Install Homebrew on macOS
+## Install Homebrew on macOS
 **Step 1.** Install the Command Line Tools for macOS if you haven't already. 
 ```bash
 xcode-select --install 
@@ -202,7 +202,7 @@ xcode-select --install
 brew --version
 ```
 
-### Install Packer
+## Install Packer
 ```bash
 wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list

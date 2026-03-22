@@ -20,6 +20,8 @@
 18. [Full-Stack Application (React, Material UI, Vite, Nginx, PostgreSQL, and Django) with a Content Security Policy](/recipe-19/README.md)
 19. [Recipe 19](/recipe-19/)
 20. [Using Container Attestations to Enforce Policy-as-Code](/recipe-20/)
+21. [Deploy a Kubernetes Cluster Using KinD](/recipe-21/)
+21. [Deploy UDS Core](/recipe-22/)
 
 ### Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)

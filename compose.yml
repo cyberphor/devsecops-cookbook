@@ -1,0 +1,9 @@
+services:
+  devsecops-cookbook:
+    profiles: [ all, docs ]
+    build: .
+    image: devsecops-cookbook:latest
+    container_name: devsecops-cookbook
+    ports:
+      - "80:8080"
+  
