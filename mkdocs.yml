@@ -1,4 +1,9 @@
 ---
 site_name: DevSecOps Cookbook
 docs_dir: recipes
-
+theme:
+  name: material
+  palette:
+    primary: amber
+  logo: infinity.png
+  favicon: infinity.png

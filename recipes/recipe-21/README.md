@@ -1,4 +1,4 @@
-# Recipe 21: Deploy a Kubernetes Cluster Using KinD
+# Deploy a Kubernetes Cluster Using KinD
 Using Container Attestations to Enforce Policy-as-Code
 * [Setup](#setup)
 * [Deploy the Kubernetes Cluster](#deploy-the-kubernetes-cluster)

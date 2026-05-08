@@ -19,7 +19,7 @@ DOCKER_COMPOSE_PROFILE ?= all
 .SILENT: build
 
 build: 
-	docker compose --profile $(DOCKER_COMPOSE_PROFILE) build --no-cache 
+	docker compose --profile $(DOCKER_COMPOSE_PROFILE) build
 
 # ---------------------------------------------------------
 # Start the containers.
