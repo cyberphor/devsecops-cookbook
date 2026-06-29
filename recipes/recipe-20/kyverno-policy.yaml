@@ -18,8 +18,8 @@ spec:
           data:
             | 
             -----BEGIN PUBLIC KEY-----
-            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9lpc8FODs8P3zsXWluLoMUEvszQ+
-            cQeDy/NhKDbmt772cJFFjGcvGgjHhNKc84cnTENwlq4u5vTYSNShb6F8cg==
+            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEx/uODzddcy32InzeN7y9gInxpl48
+            iCGH6faPh/p2aygwz796CXCh2dHXL3YtzsVSMS2DNlmruKB0ZoCuhgBgOQ==
             -----END PUBLIC KEY-----
   attestations:
     - name: sbom
@@ -42,6 +42,6 @@ spec:
     - expression: >
         images.containers.map(image, 
           extractPayload(image, attestations.scan).predicate.scanner.result.matches
-          .filter(m, m.vulnerability.severity == "Critical").size() <= 325
+          .filter(m, m.vulnerability.severity == "Critical").size() <= 326
         ).all(e, e)
-      message: Images with greater than or equal to 325 critical CVEs are prohibited.
+      message: Images with greater than or equal to 326 critical CVEs are prohibited.

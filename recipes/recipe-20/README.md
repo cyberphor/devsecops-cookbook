@@ -1,4 +1,4 @@
-## Recipe 20: Using Container Attestations to Enforce Policy-as-Code
+# Use Container Attestations to Enforce Policy-as-Code
 * [Setup](#setup)
 * [Initialize Your Environment Variables](#initialize-your-environment-variables)
 * [Deploy a Container Registry](#deploy-a-container-registry)
@@ -236,7 +236,7 @@ cosign generate-key-pair
 **Step 2.** Replace the public key in the provided Kyverno policy with the one generated in the previous step.
 
 ## Create and Apply a Kyverno Policy
-**Step 1.** Apply a Kyverno policy to the Kubernetes cluster.
+**Step 1.** Add the contents of `cosign.pub` to `kyverno-policy.yaml` and then, apply a Kyverno policy to the Kubernetes cluster.
 ```bash
 kubectl apply -f kyverno-policy.yaml
 ```
@@ -406,7 +406,7 @@ You should get output similar to below. As you will see, the number of vulnerabi
    ├── by severity: 327 critical, 760 high, 700 medium, 99 low, 210 negligible (1 unknown)
 ```
 
-**Step 4.** Prepend the metadata below to the `updated-scan.json` file created in the previous step to ensure the specific attestation follows the vulnerability attestation specification maintained by [`sigstore`](https://github.com/sigstore/cosign/blob/main/specs/COSIGN_VULN_ATTESTATION_SPEC.md).
+**Step 4.** Append the metadata below to the `updated-scan.json` file created in the previous step and save it as `scan.json` to ensure the specific attestation follows the vulnerability attestation specification maintained by [`sigstore`](https://github.com/sigstore/cosign/blob/main/specs/COSIGN_VULN_ATTESTATION_SPEC.md).
 ```bash
 jq '{
   "invocation": {
@@ -517,7 +517,7 @@ The output should be similiar to below.
 Error from server: error when creating "app.yaml": admission webhook "ivpol.validate.kyverno.svc-fail" denied the request: Policy check-images failed: Images with greater than or equal to 325 critical CVEs are prohibited.
 ```
 
-**Step 2.** Modify the provided `kyverno-policy.yml` so it accepts more risk (i.e., greater than 325 critical CVEs). Then, apply the Kyverno policy update.
+**Step 2.** Modify the provided `kyverno-policy.yml` so it accepts more risk (i.e., set it to something greater than 325 critical CVEs). Then, apply the Kyverno policy update.
 ```bash
 kubectl apply -f kyverno-policy.yaml
 ```
