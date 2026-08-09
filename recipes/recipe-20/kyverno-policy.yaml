@@ -18,8 +18,8 @@ spec:
           data:
             | 
             -----BEGIN PUBLIC KEY-----
-            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEx/uODzddcy32InzeN7y9gInxpl48
-            iCGH6faPh/p2aygwz796CXCh2dHXL3YtzsVSMS2DNlmruKB0ZoCuhgBgOQ==
+            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIMY5K89epb0/X/LX2fvD4S5MfG45
+            J1/KJiO2ZHRa0gV9tiHNHSbhHvw1vWPfi7mklh+XP3GYmpRdxLwMeKm0sA==
             -----END PUBLIC KEY-----
   attestations:
     - name: sbom
