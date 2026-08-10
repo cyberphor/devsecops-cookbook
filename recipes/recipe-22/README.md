@@ -1,6 +1,5 @@
 # Deploy UDS Core
 
-
 **Step 1.** Install k3d. k3d allows you to provision a multi-node k3s cluster on a single machine using docker. k3s is a lightweight Kubernetes distribution by Rancher. 
 ```bash
 wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
