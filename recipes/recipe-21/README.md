@@ -1,20 +1,12 @@
 # Deploy a Kubernetes Cluster Using KinD
-Using Container Attestations to Enforce Policy-as-Code
 * [Setup](#setup)
 * [Deploy the Kubernetes Cluster](#deploy-the-kubernetes-cluster)
 * [References](#references)
 
 ## Setup
-**Step 1.** Install `kubectl`.
-```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-```
+***Step 1.** Install `kubectl`.  
 
-**Step 2.** Install `kind`.
-```bash
-go install sigs.k8s.io/kind@v0.31.0
-```
+**Step 2.** Install `kind`.  
 
 ## Deploy the Kubernetes Cluster
 **Step 1.** Deploy a Kubernetes cluster called `demo` using `kind`.
