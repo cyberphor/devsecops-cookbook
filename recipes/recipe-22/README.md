@@ -1,18 +1,31 @@
-# Deploy UDS Core
+# Deploy a Kubernetes Cluster Using k3s
+* [Setup](#setup)
+* [Deploy the Kubernetes Cluster](#deploy-the-kubernetes-cluster)
+* [References](#references)
 
-**Step 1.** Install k3d. k3d allows you to provision a multi-node k3s cluster on a single machine using docker. k3s is a lightweight Kubernetes distribution by Rancher. 
+## Setup
+**Step 1.** Install `kubectl`.  
+
+**Step 2.** Install `k3d`
+
+**Step 3.** Install NPM. 
+
+**Step 4.** Create a Node module.
 ```bash
-wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+npx pepr init
 ```
 
-**Step 2.** Download the UDS CLI. 
+**Step 5.** Change directories to the Node module you just created. 
 ```bash
-wget -O uds https://github.com/defenseunicorns/uds-cli/releases/download/v0.30.0/uds-cli_v0.30.0_Linux_amd64 &&\
-chmod +x uds &&\
-sudo mv uds /usr/local/bin/
+cd demo
 ```
 
-**Step 3.** Deploy UDS Core.
+**Step 6.** Run the command below. 
 ```bash
-uds deploy k3d-core-slim-dev:latest
+npm run k3d-setup
+```
+
+**Step 7.** Text goes here.
+```bash
+npx pepr dev
 ```

@@ -20,7 +20,9 @@
 19. [Recipe 19](/recipe-19/)
 20. [Using Container Attestations to Enforce Policy-as-Code](/recipe-20/)
 21. [Deploy a Kubernetes Cluster Using KinD](/recipe-21/)
-21. [Deploy UDS Core](/recipe-22/)
+22. [Deploy a Kubernetes Cluster Using k3d](/recipe-22/)
+23. [Initialize Zarf on a Kubernetes Cluster](/recipe-23/)
+24. [Deploy UDS Core on a Kubernetes Cluster](/recipe-24/)
 
 ## Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)
