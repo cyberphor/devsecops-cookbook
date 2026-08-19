@@ -219,3 +219,44 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 ```bash
 go install sigs.k8s.io/kind@v0.31.0
 ```
+
+```bash
+kind delete cluster -n demo-cluster
+```
+
+## Install Zarf
+```bash
+ZARF_VERSION=$(curl -sIX HEAD https://github.com/zarf-dev/zarf/releases/latest | grep -i ^location: | grep -Eo 'v[0-9]+.[0-9]+.[0-9]+')
+curl -sL "https://github.com/zarf-dev/zarf/releases/download/${ZARF_VERSION}/zarf_${ZARF_VERSION}_Linux_amd64" -o zarf
+chmod +x zarf
+sudo mv zarf /usr/local/bin/zarf
+```
+
+## Install k3d
+k3d allows you to provision a multi-node k3s cluster on a single machine using docker. k3s is a lightweight Kubernetes distribution by Rancher. 
+```bash
+wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+```
+
+```bash
+k3d cluster list
+```
+
+```bash
+k3d cluster delete <cluster_name>
+```
+
+## Install the UDS CLI
+```bash
+wget -O uds https://github.com/defenseunicorns/uds-cli/releases/download/v0.30.0/uds-cli_v0.30.0_Linux_amd64 &&\
+chmod +x uds &&\
+sudo mv uds /usr/local/bin/
+```
+
+```bash
+uds version
+```
+
+```
+v0.30.0
+```
