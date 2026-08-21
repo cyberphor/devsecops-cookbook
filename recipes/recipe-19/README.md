@@ -1,4 +1,4 @@
-# Use Container Attestations to Enforce Policy-as-Code
+# Enforce Supply Chain Security Using Attestations and Policy-as-Code
 * [Setup](#setup)
 * [Initialize Your Environment Variables](#initialize-your-environment-variables)
 * [Deploy a Container Registry](#deploy-a-container-registry)

@@ -3,8 +3,8 @@ site_name: DevSecOps Cookbook
 docs_dir: recipes
 theme:
   name: readthedocs
-  logo: infinity.png
 nav:
+  - "Setup Guides": setup-guides/README.md
   - "Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH": recipe-01/README.md
   - "Create a Windows 11 and Server 2022 Vagrant box using Packer": recipe-02/README.md
   - "Create a publicly accessible Linux virtual machine in Azure using Terraform": recipe-03/README.md
@@ -22,8 +22,8 @@ nav:
   - "Create three Linux virtual machines in Azure using Terraform": recipe-15/README.md
   - "Dashboards-as-Code Using Terraform, Azure, and Grafana": recipe-16/README.md
   - "Terraform Templating": recipe-17/README.md
-  - "Full-Stack Application (React, Material UI, Vite, Nginx, PostgreSQL, and Django) with a Content Security Policy": recipe-18/README.md
-  - "Using Container Attestations to Enforce Policy-as-Code": recipe-19/README.md
+  - "Full-Stack Application with a Content Security Policy": recipe-18/README.md
+  - "Enforce Supply Chain Security Using Attestations and Policy-as-Code": recipe-19/README.md
   - "Deploy a Kubernetes Cluster Using KinD": recipe-20/README.md
   - "Deploy a Kubernetes Cluster Using k3d": recipe-21/README.md
   - "Initialize Zarf on a Kubernetes Cluster": recipe-22/README.md

@@ -1,4 +1,15 @@
 # Setup Guides
+* [Create SSH Keys](#how-to-create-ssh-keys)
+* [Setup Single Sign-On (SSO) Using SSH](#how-to-setup-single-sign-on-using-ssh)
+* [Add Your SSH Public Key to GitHub](#how-to-add-your-ssh-public-key-to-github)
+* [Create a GitHub Personal Access Token](#how-to-create-a-github-personal-access-token)
+* [Create an Azure DevOps Personal Access Token](#how-to-create-an-azure-devops-personal-access-token)
+* [Install the Azure CLI](#how-to-install-the-azure-cli)
+* [Install Terraform](#how-to-install-terraform)
+* [Install Ansible](#how-to-install-ansible)
+* [Install sqlcmd](#how-to-install-sqlcmd)
+* [Install Packer](#install-packer)
+
 
 ## How to Create SSH Keys 
 **Step 1.** Generate an SSH key pair.  
