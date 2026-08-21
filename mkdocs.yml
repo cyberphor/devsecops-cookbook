@@ -1,6 +1,3 @@
 ---
 site_name: DevSecOps Cookbook
 docs_dir: recipes
-theme:
-  logo: infinity.png
-  favicon: infinity.png
