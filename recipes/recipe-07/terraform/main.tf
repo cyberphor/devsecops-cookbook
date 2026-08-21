@@ -1,137 +1,101 @@
-resource "random_pet" "main" {
+resource "random_pet" "value" {
   length    = 2
   separator = ""
 }
 
 resource "azurerm_resource_group" "main" {
-  name     = var.resource_group_name
+  name     = random_pet.value.id
   location = var.location
 }
 
-resource "azurerm_virtual_network" "main" {
-  depends_on          = [ azurerm_resource_group.main ]
-  name                = random_pet.main.id
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  address_space       = ["10.0.0.0/16"]
+resource "azurerm_storage_account" "main" {
+  name                     = random_pet.value.id
+  resource_group_name      = azurerm_resource_group.main.name
+  location                 = azurerm_resource_group.main.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
 }
 
-resource "azurerm_subnet" "main" {
-  depends_on          = [ azurerm_resource_group.main ]
-  name                 = random_pet.main.id
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = ["10.0.0.0/24"]
+resource "azurerm_storage_share" "main" {
+  name                 = random_pet.value.id
+  storage_account_name = azurerm_storage_account.main.name
+  quota                = 1 # GB
 }
 
-resource "azurerm_public_ip" "main" {
-  depends_on          = [ azurerm_resource_group.main ]
-  name                = random_pet.main.id
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
-
-resource "azurerm_network_interface" "main" {
-  name                            = random_pet.main.id
-  location                        = var.location
-  resource_group_name             = var.resource_group_name
-  ip_configuration {
-    name                          = random_pet.main.id
-    subnet_id                     = azurerm_subnet.main.id
-    private_ip_address_allocation = "Static"
-    private_ip_address            = "10.0.0.5"
-    public_ip_address_id          = azurerm_public_ip.main.id
-  }
-}
-
-resource "azurerm_network_security_group" "main" {
-  name                = random_pet.main.id
-  location            = azurerm_resource_group.main.location
+resource "azurerm_container_registry" "main" {
   resource_group_name = azurerm_resource_group.main.name
-  security_rule {
-    name                       = "AllowRDP"
-    priority                   = 1001
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "3389"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
+  location            = azurerm_resource_group.main.location
+  name                = random_pet.value.id
+  sku                 = "Basic" 
+  admin_enabled       = true
+}
+
+resource "azuread_application" "main" {
+  display_name = random_pet.value.id
+}
+
+resource "azuread_service_principal" "main" {
+  application_id = azuread_application.main.application_id
+}
+
+resource "azuread_service_principal_password" "main" {
+  service_principal_id = azuread_service_principal.main.object_id
+}
+
+resource "azurerm_role_assignment" "main" {
+  scope                = azurerm_container_registry.main.id
+  role_definition_name = "AcrPush"
+  principal_id         = azuread_service_principal.main.object_id
+  principal_type       = "ServicePrincipal"
+}
+
+resource "terraform_data" "docker" {
+  triggers_replace = [ var.image_version ]
+  depends_on = [ azurerm_role_assignment.main ]
+  provisioner "local-exec" {
+    command = "docker image build --rm --tag ${random_pet.value.id}:${var.image_version} ../docker"
   }
-  security_rule {
-    name                       = "AllowWinRM"
-    priority                   = 1002
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "5985"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
+  provisioner "local-exec" {
+    command = "docker tag ${random_pet.value.id}:${var.image_version} ${azurerm_container_registry.main.name}.azurecr.io/${random_pet.value.id}:${var.image_version}"
+  }
+  provisioner "local-exec" {
+    command = "az acr login -n ${azurerm_container_registry.main.name} -u ${azuread_service_principal.main.application_id} -p ${azuread_service_principal_password.main.value}"
+  }
+  provisioner "local-exec" {
+    command = "docker push ${azurerm_container_registry.main.name}.azurecr.io/${random_pet.value.id}:${var.image_version}"
   }
 }
 
-resource "azurerm_network_interface_security_group_association" "main" {
-  network_interface_id      = azurerm_network_interface.main.id
-  network_security_group_id = azurerm_network_security_group.main.id
-}
-
-resource "azurerm_windows_virtual_machine" "main" {
-  name                      = random_pet.main.id
-  location                  = var.location
-  resource_group_name       = var.resource_group_name
-  size                      = var.vm_size
-  admin_username            = var.local_admin_username
-  admin_password            = var.local_admin_password
-  network_interface_ids     = [
-    azurerm_network_interface.main.id
-  ]
-  os_disk {
-    caching                 = "ReadWrite"
-    storage_account_type    = "Standard_LRS"
-    name                    = random_pet.main.id
+resource "azurerm_container_group" "main" {
+  depends_on = [ terraform_data.docker ]
+  name                = random_pet.value.id
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  sku                 = "Standard"
+  container {
+    name   = random_pet.value.id
+    image  = "${azurerm_container_registry.main.name}.azurecr.io/${random_pet.value.id}:${var.image_version}"
+    cpu    = "2"
+    memory = "2"
+    ports {
+      port     = var.container_port
+      protocol = "TCP"
+    }
+    volume {
+      name                 = azurerm_storage_share.main.name
+      mount_path           = var.volume_mount_path
+      read_only            = false
+      storage_account_name = azurerm_storage_account.main.name
+      storage_account_key  = azurerm_storage_account.main.primary_access_key
+      share_name           = azurerm_storage_share.main.name
+    }
   }
-  source_image_reference {
-    publisher               = var.vm_image_publisher
-    offer                   = var.vm_image_offer
-    sku                     = var.vm_image_sku
-    version                 = var.vm_image_version
+  image_registry_credential {
+    server = "${azurerm_container_registry.main.name}.azurecr.io"
+    username = azuread_service_principal.main.application_id
+    password = azuread_service_principal_password.main.value
   }
-  computer_name             = var.computer_name
-  timezone                  = "UTC"
-  additional_unattend_content {
-    setting      = "AutoLogon"
-    content      = <<-EOF
-      <AutoLogon>
-        <Enabled>true</Enabled>
-        <Username>${var.local_admin_username}</Username>
-        <Password>
-          <Value>${var.local_admin_password}</Value>
-        </Password>
-        <LogonCount>1</LogonCount>
-      </AutoLogon>
-    EOF
-  }
-  additional_unattend_content {
-    setting      = "FirstLogonCommands"
-    content      = <<-EOF
-      <FirstLogonCommands>
-        <SynchronousCommand>
-          <Order>1</Order>
-          <Description>Set PowerShell Execution Policy</Description>
-          <RequiresUserInput>false</RequiresUserInput>
-          <CommandLine>powershell.exe -Command "Set-ExecutionPolicy -ExecutionPolicy Bypass -Force"</CommandLine>
-        </SynchronousCommand>
-        <SynchronousCommand>
-          <Order>2</Order>
-          <Description>Configure WinRM</Description>
-          <RequiresUserInput>false</RequiresUserInput>
-          <CommandLine>powershell.exe -EncodedCommand ${textencodebase64(file("${path.module}/Enable-WinRM.ps1"), "UTF-16LE")}</CommandLine>
-        </SynchronousCommand>
-      </FirstLogonCommands>
-    EOF
-  }
+  os_type             = "Linux"
+  dns_name_label      = random_pet.value.id
+  ip_address_type     = "Public"
 }

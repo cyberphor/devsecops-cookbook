@@ -1,5 +1,4 @@
-# DevOps Cookbook: Recipe 15
-Create three Linux virtual machines in Azure using Terraform.
+# Create multiple Linux virtual machines in Azure using Terraform
 
 **Step 1.** Text goes here.
 ```bash

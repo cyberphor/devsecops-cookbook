@@ -1,30 +1,15 @@
-# Initialize Zarf on a Kubernetes Cluster
+# Deploy UDS Core on a Kubernetes Cluster
 
-**Step 1.** Provision a Kubernetes cluster. 
+**Step 1.** Install k3d. 
 
-**Step 2.** Install the Zarf CLI. 
+**Step 2.** Install the UDS CLI. 
 
-**Step 3.** Download the dependencies needed to configure the Kubernetes cluster. They will be downloaded in the shape of a Zarf package. 
+**Step 3.** Deploy UDS Core onto your k3s cluster.
 ```bash
-zarf tools download-init
+uds deploy k3d-core-slim-dev:latest
 ```
 
-**Step 4.** Configure the Kubernetes cluster to support Zarf-based deployments.  
+**Step 4.** Deploy UDS Core onto your k3s cluster.
 ```bash
-zarf init --confirm
-```
-
-**Step 5.** Delete the Zarf package you downloaded. 
-```bash
-rm zarf-init-*.zst
-```
-
-**Step 6.** Validate your Kubernetes cluster is configured as expected. 
-```bash
-zarf tools monitor
-```
-
-**Step 7.** To remove the additional configurations added, run the command below. 
-```bash
-zarf destroy --confirm
+uds deploy k3d-core-slim-dev:latest
 ```

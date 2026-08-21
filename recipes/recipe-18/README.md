@@ -1,5 +1,6 @@
-## Recipe 18
+# Deploy a Full Stack App with a Content Security Policy
 
+Text goes here. 
 
 ## References
 * [Quickstart: Get started using GPT-35-Turbo and GPT-4 with Azure OpenAI Service](https://learn.microsoft.com/en-us/azure/ai-services/openai/chatgpt-quickstart?tabs=bash%2Ckeyless%2Ctypescript-keyless%2Cpython-new&pivots=programming-language-python)

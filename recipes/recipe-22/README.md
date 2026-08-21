@@ -1,31 +1,30 @@
-# Deploy a Kubernetes Cluster Using k3s
-* [Setup](#setup)
-* [Deploy the Kubernetes Cluster](#deploy-the-kubernetes-cluster)
-* [References](#references)
+# Initialize Zarf on a Kubernetes Cluster
 
-## Setup
-**Step 1.** Install `kubectl`.  
+**Step 1.** Provision a Kubernetes cluster. 
 
-**Step 2.** Install `k3d`
+**Step 2.** Install the Zarf CLI. 
 
-**Step 3.** Install NPM. 
-
-**Step 4.** Create a Node module.
+**Step 3.** Download the dependencies needed to configure the Kubernetes cluster. They will be downloaded in the shape of a Zarf package. 
 ```bash
-npx pepr init
+zarf tools download-init
 ```
 
-**Step 5.** Change directories to the Node module you just created. 
+**Step 4.** Configure the Kubernetes cluster to support Zarf-based deployments.  
 ```bash
-cd demo
+zarf init --confirm
 ```
 
-**Step 6.** Run the command below. 
+**Step 5.** Delete the Zarf package you downloaded. 
 ```bash
-npm run k3d-setup
+rm zarf-init-*.zst
 ```
 
-**Step 7.** Text goes here.
+**Step 6.** Validate your Kubernetes cluster is configured as expected. 
 ```bash
-npx pepr dev
+zarf tools monitor
+```
+
+**Step 7.** To remove the additional configurations added, run the command below. 
+```bash
+zarf destroy --confirm
 ```

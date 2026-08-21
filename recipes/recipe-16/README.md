@@ -1,4 +1,4 @@
-## Recipe 16
+# Dashboards-as-Code
 The purpose of this recipe is to demonstrate the idea of "Dashboards-as-Code." It assumes you have `terraform` and `az` installed.
 
 **Step 1.** Save your environment variables to a file called `.env` for `az` to use.

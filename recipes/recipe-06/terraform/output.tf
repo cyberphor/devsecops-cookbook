@@ -1,16 +1,19 @@
-output "connect" {
-  value = "${azurerm_container_group.main.fqdn}:${var.container_port}"
+output "username" {
+  value = var.local_admin_username
 }
 
-output "start" {
-  value = "https://${azurerm_linux_function_app.main.default_hostname}/api/start"
+output "ip_address" {
+  value = azurerm_public_ip.main.ip_address
 }
 
-output "stop" {
-  value = "https://${azurerm_linux_function_app.main.default_hostname}/api/stop"
+resource "local_file" "main" {
+  content  = yamlencode({
+    "all": {
+      "hosts": {
+        "${azurerm_public_ip.main.ip_address}": ""
+      }
+    }
+  })
+  filename = "${path.module}/../ansible/inventory.yaml"
 }
 
-#output "host_key" {
-#  value = data.azurerm_function_app_host_keys.main.default_function_key
-#  sensitive = true
-#}

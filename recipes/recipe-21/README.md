@@ -1,34 +1,31 @@
-# Deploy a Kubernetes Cluster Using KinD
+# Deploy a Kubernetes Cluster Using k3s
 * [Setup](#setup)
 * [Deploy the Kubernetes Cluster](#deploy-the-kubernetes-cluster)
 * [References](#references)
 
 ## Setup
-***Step 1.** Install `kubectl`.  
+**Step 1.** Install `kubectl`.  
 
-**Step 2.** Install `kind`.  
+**Step 2.** Install `k3d`
 
-## Deploy the Kubernetes Cluster
-**Step 1.** Deploy a Kubernetes cluster called `demo` using `kind`.
+**Step 3.** Install NPM. 
+
+**Step 4.** Create a Node module.
 ```bash
-kind create cluster --name "demo-cluster" --image kindest/node:v1.34.0 --config cluster.yaml
+npx pepr init
 ```
 
-**Step 2.** Confirm the version of your Kubernetes cluster is `v1.34.0` using `kubectl`.
+**Step 5.** Change directories to the Node module you just created. 
 ```bash
-kubectl version
+cd demo
 ```
 
-You should get output similar to below.
-```
-Client Version: v1.35.0
-Kustomize Version: v5.7.1
-Server Version: v1.34.0
+**Step 6.** Run the command below. 
+```bash
+npm run k3d-setup
 ```
 
-## References
-**kind: Local Registry**  
-https://kind.sigs.k8s.io/docs/user/local-registry/
-
-**kind: Using WSL2**  
-https://kind.sigs.k8s.io/docs/user/using-wsl2/#accessing-a-kubernetes-service-running-in-wsl2
+**Step 7.** Text goes here.
+```bash
+npx pepr dev
+```

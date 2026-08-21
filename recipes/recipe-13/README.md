@@ -1,4 +1,4 @@
-## Recipe 13: OpenStack
+# Deploy an OpenStack Cloud
 
 **Hardware**  
 * Dell PowerEdge R610

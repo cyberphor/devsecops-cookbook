@@ -1,49 +1,19 @@
 variable "location" {
-  type    = string
+  type = string
   default = "eastus"
 }
 
-variable "resource_group_name" {
+variable "image_version" {
   type    = string
-  default = "windows"
+  default = "v1.0.0"
 }
 
-variable "vm_size" {
-  type    = string
-  default = "Standard_DS1_v2"
+variable "container_port" {
+  type    = number
+  default = 1337
 }
 
-variable "vm_image_publisher" {
+variable "volume_mount_path" {
   type    = string
-  default = "MicrosoftWindowsServer"
-}
-
-variable "vm_image_offer" {
-  type    = string
-  default = "WindowsServer" 
-}
-
-variable "vm_image_sku" {
-  type    = string
-  default = "2022-Datacenter"
-}
-
-variable "vm_image_version" {
-  type    = string
-  default = "latest" 
-}
-
-variable "computer_name" {
-  type    = string
-  default = "XYZ9000DC01"
-}
-
-variable "local_admin_username" {
-  type    = string
-  default = "victor"
-}
-
-variable "local_admin_password" {
-  type    = string
-  default = "Password123!"
+  default = "/opt/minecraft-server/world"
 }
