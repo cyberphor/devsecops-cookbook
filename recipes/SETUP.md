@@ -1,17 +1,22 @@
 # Setup Guides
-* [Create SSH Keys](#how-to-create-ssh-keys)
-* [Setup Single Sign-On (SSO) Using SSH](#how-to-setup-single-sign-on-using-ssh)
-* [Add Your SSH Public Key to GitHub](#how-to-add-your-ssh-public-key-to-github)
-* [Create a GitHub Personal Access Token](#how-to-create-a-github-personal-access-token)
-* [Create an Azure DevOps Personal Access Token](#how-to-create-an-azure-devops-personal-access-token)
-* [Install the Azure CLI](#how-to-install-the-azure-cli)
-* [Install Terraform](#how-to-install-terraform)
-* [Install Ansible](#how-to-install-ansible)
-* [Install sqlcmd](#how-to-install-sqlcmd)
+* [Create SSH Keys](#create-ssh-keys)
+* [Setup Single Sign-On (SSO) Using SSH](#setup-single-sign-on-using-ssh)
+* [Add Your SSH Public Key to GitHub](#add-your-ssh-public-key-to-github)
+* [Create a GitHub Personal Access Token](#create-a-github-personal-access-token)
+* [Create an Azure DevOps Personal Access Token](#create-an-azure-devops-personal-access-token)
+* [Install the Azure CLI](#install-the-azure-cli)
+* [Install Terraform](#install-terraform)
+* [Install Ansible](#install-ansible)
+* [Install sqlcmd](#install-sqlcmd)
+* [Install Homebrew on macOS](#install-homebrew-on-macos)
 * [Install Packer](#install-packer)
+* [Install Kubectl](#install-kubectl)
+* [Install KinD](#install-kind)
+* [Install Zarf](#install-zarf)
+* [Install k3d](#install-k3d)
+* [Install the UDS CLI](#install-the-uds-cli)
 
-
-## How to Create SSH Keys 
+## Create SSH Keys 
 **Step 1.** Generate an SSH key pair.  
 ```bash
 # -t: defines the key pair type
@@ -24,7 +29,7 @@ ssh-keygen -t rsa -b 4096 -C "for DevOps"
   
 **Step 3.** Enter a passphrase to encrypt the private key.  
 
-## How to Setup Single Sign-On Using SSH
+## Setup Single Sign-On Using SSH
 Setting up SSH-based Single Sign-On (SSO) allows you to present your SSH private key automatically during authentication (e.g., when authenticating with GitHub). 
 
 **Step 1.** Open your BASH configuration file using your favorite text-editor
@@ -38,7 +43,7 @@ eval "$(ssh-agent -s)" # starts the SSH authentication agent
 ssh-add ~/.ssh/id_rsa  # adds your SSH private key to the SSH authentication agent
 ```
 
-## How to Add Your SSH Public Key to GitHub
+## Add Your SSH Public Key to GitHub
 **Step 1.** Print and copy your SSH public key.
 ```bash
 cat ~/.ssh/id_rsa.pub
@@ -56,7 +61,7 @@ cat ~/.ssh/id_rsa.pub
 
 **Step 7.** Click "Add SSH key."
 
-## How to Create a GitHub Personal Access Token
+## Create a GitHub Personal Access Token
 **Step 1.** Login to GitHub.  
 
 **Step 2.** Click your profile (top-right icon) and click "Settings."  
@@ -75,7 +80,7 @@ cat ~/.ssh/id_rsa.pub
 
 **Step 9.** Click "Generate token."  
 
-## How to Create an Azure DevOps Personal Access Token
+## Create an Azure DevOps Personal Access Token
 **Step 1.** Browse to [http://dev.azure.com/](http://dev.azure.com/).  
 
 **Step 2.** Click your Azure DevOps project.  
@@ -96,7 +101,7 @@ cat ~/.ssh/id_rsa.pub
 
 **Step 10.** Record your PAT and use it as necessary.
 
-## How to Install the Azure CLI
+## Install the Azure CLI
 **Step 1.** Enter the command below. 
 ```bash
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
@@ -119,7 +124,7 @@ az login --tenant "${TENANT_ID}" --use-device-code
 az account set --subscription "${SUBSCRIPTION_ID}"
 ```
 
-## How to Install Terraform
+## Install Terraform
 **Step 1.** Install the following packages if not already done: `gnupg`, `software-properties-common`, and `curl`. They are required to verify the identity of HashiCorp's package repository. 
 ```bash
 sudo apt-get update 
@@ -157,7 +162,7 @@ sudo apt update
 sudo apt install terraform
 ```
 
-## How to Install Ansible
+## Install Ansible
 **Step 1.** Install Ansible.
 ```bash
 sudo apt update
@@ -166,7 +171,7 @@ sudo add-apt-repository --yes --update ppa:ansible/ansible
 sudo apt install ansible
 ```
 
-## How to Install sqlcmd
+## Install sqlcmd
 **Step 1.** Import the GPG keys for Microsoft's Ubuntu package repository.
 ```bash
 sudo su
