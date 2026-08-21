@@ -7,25 +7,23 @@ on:
 
 jobs:
   build:
-    name: Build docs
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Clone the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
-      - name: Install dependencies
+        uses: actions/setup-python@v7
+      - name: Install Python dependencies
         run: pip install mkdocs
       - name: Build docs
         run: mkdocs build
-      - name: Upload pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deliver docs
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site/
   deploy:
-    name: Deploy docs
+    name: Deploy
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -35,6 +33,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy docs
         id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

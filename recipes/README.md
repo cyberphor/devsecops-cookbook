@@ -1,2 +1,1 @@
-# Recipes
-
+The DevSecOps Cookbook is a collection of platform engineering, continuous integration, continuous delivery, and continuous monitoring recipes developed by Victor Fernandez III ([@cyberphor](https://github.com/cyberphor)). 
