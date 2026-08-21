@@ -4,7 +4,7 @@ docs_dir: recipes
 theme:
   name: readthedocs
 nav:
-  - "Setup Guides": setup-guides/README.md
+  - "Setup Guides": setup.md
   - "Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH": recipe-01/README.md
   - "Create a Windows 11 and Server 2022 Vagrant box using Packer": recipe-02/README.md
   - "Create a publicly accessible Linux virtual machine in Azure using Terraform": recipe-03/README.md
