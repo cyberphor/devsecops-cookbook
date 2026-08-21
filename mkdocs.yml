@@ -2,6 +2,6 @@
 site_name: DevSecOps Cookbook
 docs_dir: recipes
 theme:
-  name: null
+  name: readthedocs
   logo: infinity.png
   favicon: infinity.png
