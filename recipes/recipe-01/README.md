@@ -1,4 +1,4 @@
-# Recipe 01
+# Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH
 
 ## Objectives
 1. Create a CI/CD pipeline for a Node.js web app

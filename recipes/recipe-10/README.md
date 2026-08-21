@@ -1,4 +1,5 @@
-## Recipe 10: Add observability and security to an Azure Kubernetes Service (AKS) instance using OpenTelemetry and Elastic.
+# Add observability and security to an Azure Kubernetes Service (AKS) instance using OpenTelemetry and Elastic.
+
 The purpose of this recipe is to add observability and security to an AKS instance using OpenTelemetry and Elastic. 
 * [References](#references)
 * [Notes](#notes)

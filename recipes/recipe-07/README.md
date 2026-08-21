@@ -1,4 +1,4 @@
-## Recipe 07
+# Create and configure a publicly accessible Windows virtual machine in Azure using Terraform and Ansible
 
 **Step 1.** Install [Terraform](https://developer.hashicorp.com/terraform/install) if you don't already have it installed. 
 
