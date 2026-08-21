@@ -1,27 +1,4 @@
-## Recipes
-1. [Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH](/recipe-01/)
-2. [Create a Windows 11 and Server 2022 Vagrant box using Packer](/recipe-02/)
-3. [Create a publicly accessible Linux virtual machine in Azure using Terraform](/recipe-03/)
-4. [Create and configure a publicly accessible Linux virtual machine in Azure using Terraform and Ansible](/recipe-04/)
-5. [Create a Windows 11 and Server 2022 Vagrant box using Packer](/recipe-05/)
-6. [Create and configure a publicly accessible Windows virtual machine in Azure using Terraform and Ansible](/recipe-06/)
-7. [Using Terraform, deploy a containerized application to Azure Container Instances and a Python-based serverless function to Azure Functions (the containerized application is a Minecraft Server while the serverless function can start and stop the application)](/recipe-06/)
-8. [Create a Data Flow Diagram using Markdown and Mermaid](/recipe-08/)
-9. [Deploy an OpenTelemetry Agent and OpenTelemetry Collector](/recipe-09/) 
-10. [Add observability and security to an Azure Kubernetes Service (AKS) instance using OpenTelemetry and Elastic](/recipe-10/)
-11. [GitHub Actions Workflows](/recipe-11/)
-12. [Tekton](/recipe-12/)
-13. [OpenStack](/recipe-13/)
-14. [Create and Use a Virtual Machine Template in Proxmox with Packer and Terraform](/recipe-14/)
-15. [Create three Linux virtual machines in Azure using Terraform](/recipe-15/)
-16. [Dashboards-as-Code Using Terraform, Azure, and Grafana](/recipe-16/)
-17. [Terraform Templating](/recipe-17/)
-18. [Full-Stack Application (React, Material UI, Vite, Nginx, PostgreSQL, and Django) with a Content Security Policy](/recipe-18/README.md)
-19. [Using Container Attestations to Enforce Policy-as-Code](/recipe-19/)
-20. [Deploy a Kubernetes Cluster Using KinD](/recipe-20/)
-21. [Deploy a Kubernetes Cluster Using k3d](/recipe-21/)
-22. [Initialize Zarf on a Kubernetes Cluster](/recipe-22/)
-23. [Deploy UDS Core on a Kubernetes Cluster](/recipe-23/)
+# Recipes
 
 ## Setup Guides
 * [Create SSH Keys](/SETUP.md#how-to-create-ssh-keys)

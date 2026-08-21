@@ -4,4 +4,27 @@ docs_dir: recipes
 theme:
   name: readthedocs
   logo: infinity.png
-  favicon: infinity.png
+nav:
+  - "Create a CI/CD pipeline in Azure DevOps using Terraform, Ansible, and BASH": recipe-01/README.md
+  - "Create a Windows 11 and Server 2022 Vagrant box using Packer": recipe-02/README.md
+  - "Create a publicly accessible Linux virtual machine in Azure using Terraform": recipe-03/README.md
+  - "Create and configure a publicly accessible Linux virtual machine in Azure using Terraform and Ansible": recipe-04/README.md
+  - "Create a Windows 11 and Server 2022 Vagrant box using Packer": recipe-05/README.md
+  - "Create and configure a publicly accessible Windows virtual machine in Azure using Terraform and Ansible": recipe-06/README.md
+  - "Deploy a containerized application to Azure Container Instances and a serverless function to Azure Functions": recipe-07/README.md
+  - "Create a Data Flow Diagram using Markdown and Mermaid": recipe-08/README.md
+  - "Deploy an OpenTelemetry Agent and OpenTelemetry Collector": recipe-09/README.md
+  - "Add observability and security to an Azure Kubernetes Service (AKS) instance using OpenTelemetry and Elastic": recipe-10/README.md
+  - "GitHub Actions Workflows": recipe-11/README.md
+  - "Tekton": recipe-12/README.md
+  - "OpenStack": recipe-13/README.md
+  - "Create and Use a Virtual Machine Template in Proxmox with Packer and Terraform": recipe-14/README.md
+  - "Create three Linux virtual machines in Azure using Terraform": recipe-15/README.md
+  - "Dashboards-as-Code Using Terraform, Azure, and Grafana": recipe-16/README.md
+  - "Terraform Templating": recipe-17/README.md
+  - "Full-Stack Application (React, Material UI, Vite, Nginx, PostgreSQL, and Django) with a Content Security Policy": recipe-18/README.md
+  - "Using Container Attestations to Enforce Policy-as-Code": recipe-19/README.md
+  - "Deploy a Kubernetes Cluster Using KinD": recipe-20/README.md
+  - "Deploy a Kubernetes Cluster Using k3d": recipe-21/README.md
+  - "Initialize Zarf on a Kubernetes Cluster": recipe-22/README.md
+  - "Deploy UDS Core on a Kubernetes Cluster": recipe-23/README.md
