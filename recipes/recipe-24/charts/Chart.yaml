@@ -1,0 +1,7 @@
+---
+apiVersion: v2
+name: sonic
+description: A simple Helm chart for the dazdaz/sonic container
+type: application
+version: 0.1.0
+appVersion: "latest"

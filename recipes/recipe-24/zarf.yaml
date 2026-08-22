@@ -1,0 +1,23 @@
+---
+kind: ZarfPackageConfig
+metadata:
+  name: sonic
+  version: 0.1.0
+
+components:
+  - name: sonic
+    required: true
+    charts:
+      - name: sonic
+        version: 0.1.0
+        namespace: sonic
+        localPath: charts
+        valuesFiles:
+          - charts/values.yaml
+    manifests:
+      - name: sonic-uds-config
+        namespace: sonic
+        files:
+          - uds-package-sonic.yaml
+    images:
+      - docker.io/dazdaz/sonic:latest

@@ -28,3 +28,4 @@ nav:
   - "Deploy a Kubernetes Cluster Using k3d": recipe-21/README.md
   - "Initialize Zarf on a Kubernetes Cluster": recipe-22/README.md
   - "Deploy UDS Core on a Kubernetes Cluster": recipe-23/README.md
+  - "Deploy a Zarf package onto a Kubernetes cluster running UDS Core": recipe-24/README.md
