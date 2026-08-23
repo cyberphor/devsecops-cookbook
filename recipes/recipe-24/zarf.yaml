@@ -1,23 +1,26 @@
+# zarf.yaml
+
 ---
 kind: ZarfPackageConfig
 metadata:
   name: sonic
-  version: 0.1.0
-
+  version: v0.1.0
+  annotations:
+    dev.uds.title: Sonic
 components:
   - name: sonic
     required: true
-    charts:
-      - name: sonic
-        version: 0.1.0
-        namespace: sonic
-        localPath: charts
-        valuesFiles:
-          - charts/values.yaml
     manifests:
-      - name: sonic-uds-config
+      - name: sonic
         namespace: sonic
         files:
-          - uds-package-sonic.yaml
+          - uds-package.yaml
+    charts:
+      - name: sonic
+        version: v0.1.0
+        namespace: sonic
+        localPath: charts/frontend
+        valuesFiles:
+          - charts/frontend/values.yaml
     images:
       - docker.io/dazdaz/sonic:latest

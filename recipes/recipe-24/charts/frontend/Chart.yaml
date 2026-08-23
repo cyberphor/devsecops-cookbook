@@ -1,0 +1,11 @@
+# charts/frontend/Chart.yaml
+
+---
+# Chart metadata.
+apiVersion: v2
+type: application
+version: v0.1.0
+
+# Component metadata.
+name: frontend
+appVersion: v0.1.0

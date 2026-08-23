@@ -1,0 +1,13 @@
+# charts/frontend/values.yaml
+
+---
+namespace: sonic
+replicaCount: 1
+image: 
+  pullPolicy: Always
+  repository: dazdaz/sonic
+  tag: latest
+service: 
+  type: ClusterIP
+  name: frontend
+  port: 8080

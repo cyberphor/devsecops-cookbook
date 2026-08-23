@@ -1,0 +1,16 @@
+# charts/frontend/templates/service.yaml
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: {{ .Values.service.name }}
+  labels:
+    app.kubernetes.io/component: {{ .Values.service.name }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app.kubernetes.io/component: {{ .Values.service.name }}
+  ports:
+    - port: {{ .Values.service.port }}

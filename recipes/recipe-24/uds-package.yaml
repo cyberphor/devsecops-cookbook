@@ -1,0 +1,15 @@
+# uds-package.yaml
+
+---
+apiVersion: uds.dev/v1alpha1
+kind: Package
+metadata:
+  namespace: sonic
+  name: sonic
+spec:
+  network:
+    expose:    
+      - service: frontend
+        selector:
+          app.kubernetes.io/component: frontend
+        host: sonic
