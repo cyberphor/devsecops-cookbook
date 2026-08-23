@@ -1,15 +1,9 @@
 # Deploy UDS Core on a Kubernetes Cluster
 
+## Recipe
 **Step 1.** Install [k3d](../setup/README.md#install-k3d). 
 
 **Step 2.** Install the [UDS CLI](../setup/README.md#install-the-uds-cli). 
-
-**Step 3.** 
-
-**Step 4.**
-```bash
-sudo sysctl -w fs.inotify.max_user_instances=8192
-```
 
 **Step 3.** Deploy a k3s cluster with UDS Core installed using the UDS CLI. The UDS CLI will invoke `k3d` to deploy a k3s cluster. 
 ```bash
@@ -26,14 +20,17 @@ When prompted, enter `y` to deploy the UDS Core bundle. When the command finishe
      zarf connect prometheus   | Directly connect to the Prometheus HTTP service 
 ```
 
-**Step 4.** To verify all UDS Core pods are working, run the command below. *There should be no output.*
+**Step 4.** To verify all UDS Core pods are working, run the command below. NOTE: There should be no output.
 ```bash
 uds zarf tools kubectl get pods -A --no-headers | grep -Ev '(Running|Completed)'
 ```
 
-**Troubleshooting**. If you're doing this in WSL and it hangs at `INFO[0015] Injecting records for hostAliases (incl. host.k3d.internal) and for 2 network members into CoreDNS configmap...`, try updating WSL to the latest version. 
+## Troubleshooting
+**Injecting records for hostAliases**  
+If you're doing this in WSL and it hangs at `Injecting records for hostAliases (incl. host.k3d.internal) and for 2 network members into CoreDNS configmap...`, try updating WSL to the latest version. 
 
-If it hangs at `2026-08-22 22:32:02 INF performing Helm install chart=falco`, it may be because your kernel's `fs.inotify.max_user_instances` limit is too low. To investigate this, first check the status of your Falco pods. 
+**Performing Helm install chart=falco**  
+If it hangs at `performing Helm install chart=falco`, it may be because your kernel's `fs.inotify.max_user_instances` limit is too low. To investigate this, first check the status of your Falco pods. 
 ```bash
 uds zarf tools kubectl get pods -n falco
 ```
@@ -52,12 +49,13 @@ Triggered rules by rule name:
 Error: could not initialize inotify handler
 ```
 
-If your `fs.inotify.max_user_instances` limit is 128, increase it using `sysctl`. 
+To increase your `fs.inotify.max_user_instances` limit, use `sysctl`. 
 ```bash
 sudo sysctl -w fs.inotify.max_user_instances=8192
 ```
 
-**Clean Up.** When you're done, use `k3d` to delete the k3s cluster created. 
+## Cleaning Up
+When you're done, use `k3d` to delete the k3s cluster created. 
 ```bash
 k3d cluster delete uds
 ```

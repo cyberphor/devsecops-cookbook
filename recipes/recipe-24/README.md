@@ -1,6 +1,6 @@
 # Deploy an app on a Kubernetes cluster using Zarf and UDS
 
-Before getting started, [make sure you have a Kubernetes cluster running UDS Core](../recipe-24/README.md). The following steps will produce a number of files and folders. By the end of this process, your current working directory will look like below. 
+Before getting started, [make sure you have a Kubernetes cluster running UDS Core](../recipe-23/README.md#recipe). The following steps will produce a number of files and folders. By the end of this process, your current working directory will look like below. 
 ```
 ├── Makefile
 ├── charts
@@ -14,6 +14,7 @@ Before getting started, [make sure you have a Kubernetes cluster running UDS Cor
 └── zarf.yaml
 ```
 
+## Recipe
 **Step 1.** Create a Makefile and add the content below to it. NOTE: this specific Makefile has the Zarf package name and version `sonic` and `v0.1.0` hardcoded.  
 ```makefile
 # ---------------------------------------------------------
@@ -214,7 +215,8 @@ make
 
 **Step 13.** Once your app is deployed, open it (e.g., [`https://sonic.uds.dev`](https://sonic.uds.dev)) in a browser.
 
-**Step 14.** When you're done, remove the Zarf package using the command below (again, from the root of your project directory). 
+## Cleaning Up
+When you're done, remove the Zarf package using the command below (again, from the root of your project directory). 
 ```bash
 make remove
 ```
