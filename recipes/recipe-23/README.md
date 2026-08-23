@@ -1,4 +1,4 @@
-# Deploy UDS Core on a Kubernetes Cluster
+# Deploy UDS Core onto a Kubernetes Cluster
 
 ## Recipe
 **Step 1.** Install [k3d](../setup/README.md#install-k3d). 

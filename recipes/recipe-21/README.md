@@ -1,12 +1,9 @@
-# Deploy a Kubernetes Cluster Using k3s
-* [Setup](#setup)
-* [Deploy the Kubernetes Cluster](#deploy-the-kubernetes-cluster)
-* [References](#references)
+# Deploy a Kubernetes Cluster Using k3d
 
 ## Setup
 **Step 1.** Install `kubectl`.  
 
-**Step 2.** Install `k3d`
+**Step 2.** Install [k3d](../setup/README.md#install-k3d). 
 
 **Step 3.** Install NPM. 
 

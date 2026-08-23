@@ -1,4 +1,4 @@
-# Deploy an app on a Kubernetes cluster using Zarf and UDS
+# Deploy an app onto a Kubernetes cluster using Zarf and UDS
 
 Before getting started, [make sure you have a Kubernetes cluster running UDS Core](../recipe-23/README.md#recipe). The following steps will produce a number of files and folders. By the end of this process, your current working directory will look like below. 
 ```
