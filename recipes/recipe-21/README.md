@@ -1,6 +1,5 @@
 # Deploy a Kubernetes Cluster Using k3d
 
-## Setup
 **Step 1.** Install `kubectl`.  
 
 **Step 2.** Install [k3d](../setup/README.md#install-k3d). 
