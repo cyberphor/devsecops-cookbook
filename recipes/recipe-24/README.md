@@ -2,6 +2,7 @@
 
 **Step 1.** [Deploy UDS Core on a Kubernetes Cluster](../recipe-24/README.md). 
 
+
 **Step 2.** Create a working directory. 
 ```bash
 mkdir sonic 
@@ -80,7 +81,12 @@ spec:
 uds zarf package create --confirm
 ```
 
-**Step 7.** Deploy the Zarf package. 
+**Step 7.** If it's not already in your hosts file, add an entry for the app in question. 
+```bash
+echo "127.0.0.1 sonic.uds.dev" | sudo tee -a /etc/hosts
+```
+
+**Step 8.** Deploy the Zarf package. 
 ```bash
 uds zarf package deploy zarf-package-sonic-amd64-0.1.0.tar.zst --confirm
 ```

@@ -264,7 +264,7 @@ k3d cluster delete <cluster_name>
 
 ## Install the UDS CLI
 ```bash
-wget -O uds https://github.com/defenseunicorns/uds-cli/releases/download/v0.30.0/uds-cli_v0.30.0_Linux_amd64 &&\
+wget -O uds https://github.com/defenseunicorns/uds-cli/releases/download/v0.35.1/uds-cli_v0.35.1_Linux_amd64 &&\
 chmod +x uds &&\
 sudo mv uds /usr/local/bin/
 ```
@@ -274,5 +274,5 @@ uds version
 ```
 
 ```
-v0.30.0
+v0.35.1
 ```
