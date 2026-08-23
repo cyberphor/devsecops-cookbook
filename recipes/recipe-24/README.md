@@ -207,9 +207,14 @@ If you completed this recipe using WSL, make sure to also add a DNS entry to you
 powershell_ise.exe C:\Windows\System32\drivers\etc\hosts
 ```
 
-**Step 12.** Create and deploy your app as a Zarf package. 
+**Step 12.** Create and deploy your app as a Zarf package (run this command in the root of your project). 
 ```bash
 make
 ```
 
 **Step 13.** Once your app is deployed, open it (e.g., [`https://sonic.uds.dev`](https://sonic.uds.dev)) in a browser.
+
+**Step 14.** When you're done, remove the Zarf package using the command below (again, from the root of your project directory). 
+```bash
+make remove
+```
