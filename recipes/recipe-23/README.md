@@ -25,6 +25,19 @@ When prompted, enter `y` to deploy the UDS Core bundle. When the command finishe
 uds zarf tools kubectl get pods -A --no-headers | grep -Ev '(Running|Completed)'
 ```
 
+**Step 5.** If they are not already in your `/etc/hosts` file, add DNS entries for each of the UDS Core services you just deployed. 
+```bash
+echo "127.0.0.1 keycloak.admin.uds.dev" | sudo tee -a /etc/hosts
+echo "127.0.0.1 grafana.admin.uds.dev" | sudo tee -a /etc/hosts
+echo "127.0.0.1 sso.uds.dev" | sudo tee -a /etc/hosts
+echo "127.0.0.1 portal.uds.dev" | sudo tee -a /etc/hosts
+```
+
+If you completed this recipe using WSL, make sure to also add the DNS entries to your Windows host. NOTE: this will require opening a Terminal window as an administrator.  
+```powershell
+powershell_ise.exe C:\Windows\System32\drivers\etc\hosts
+```
+
 ## Troubleshooting
 **Injecting records for hostAliases**  
 If you're doing this in WSL and it hangs at `Injecting records for hostAliases (incl. host.k3d.internal) and for 2 network members into CoreDNS configmap...`, try updating WSL to the latest version. 
