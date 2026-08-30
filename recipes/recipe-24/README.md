@@ -208,6 +208,10 @@ If you completed this recipe using WSL, make sure to also add a DNS entry to you
 powershell_ise.exe C:\Windows\System32\drivers\etc\hosts
 ```
 
+```
+127.0.0.1 sonic.uds.dev
+```
+
 **Step 12.** Create and deploy your app as a Zarf package (run this command in the root of your project). 
 ```bash
 make

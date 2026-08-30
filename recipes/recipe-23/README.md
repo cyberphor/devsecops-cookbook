@@ -27,15 +27,27 @@ uds zarf tools kubectl get pods -A --no-headers | grep -Ev '(Running|Completed)'
 
 **Step 5.** If they are not already in your `/etc/hosts` file, add DNS entries for each of the UDS Core services you just deployed. 
 ```bash
-echo "127.0.0.1 keycloak.admin.uds.dev" | sudo tee -a /etc/hosts
-echo "127.0.0.1 grafana.admin.uds.dev" | sudo tee -a /etc/hosts
 echo "127.0.0.1 sso.uds.dev" | sudo tee -a /etc/hosts
 echo "127.0.0.1 portal.uds.dev" | sudo tee -a /etc/hosts
+echo "127.0.0.1 grafana.uds.dev" | sudo tee -a /etc/hosts
+echo "127.0.0.1 keycloak.uds.dev" | sudo tee -a /etc/hosts
 ```
 
 If you completed this recipe using WSL, make sure to also add the DNS entries to your Windows host. NOTE: this will require opening a Terminal window as an administrator.  
 ```powershell
 powershell_ise.exe C:\Windows\System32\drivers\etc\hosts
+```
+
+```
+127.0.0.1 sso.uds.dev
+127.0.0.1 portal.uds.dev
+127.0.0.1 grafana.admin.uds.dev
+127.0.0.1 keycloak.admin.uds.dev
+```
+
+**Step 6.** Setup a port-forward for Keycloak traffic so you can create an administrator account.
+```bash
+kubectl -n keycloak port-forward svc/keycloak-http 8080:8080
 ```
 
 ## Troubleshooting
