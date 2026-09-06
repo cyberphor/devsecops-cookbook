@@ -1,0 +1,28 @@
+# zarf.yaml
+
+---
+kind: ZarfPackageConfig
+metadata:
+  name: sonic
+  version: 0.1.0
+  annotations:
+    dev.uds.title: Sonic
+components:
+  - name: sonic-container-image
+    required: true
+    images:
+      - docker.io/dazdaz/sonic:latest
+  - name: sonic-k8s-manifest
+    required: true
+    manifests:
+      - name: sonic-k8s-manifest
+        namespace: sonic
+        files:
+          - sonic-k8s-manifest.yaml
+  - name: sonic-uds-manifest
+    required: true
+    manifests:
+      - name: sonic-uds-manifest
+        namespace: sonic
+        files:
+          - sonic-uds-package.yaml

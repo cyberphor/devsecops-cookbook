@@ -1,4 +1,4 @@
-# uds-package.yaml
+# sonic-uds-package.yaml
 
 ---
 apiVersion: uds.dev/v1alpha1
