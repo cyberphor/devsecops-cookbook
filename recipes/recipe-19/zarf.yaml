@@ -1,0 +1,29 @@
+---
+kind: ZarfPackageConfig
+
+metadata:
+  name: kyverno
+  version: v1.19.0
+
+components:
+  - name: kyverno
+    required: true
+
+    charts:
+      - name: kyverno
+        version: 3.5.2
+        namespace: kyverno
+        url: https://kyverno.github.io/kyverno/
+        repoName: kyverno
+        releaseName: kyverno
+        valuesFiles:
+          - kyverno-values.yaml
+
+    images:
+      - reg.kyverno.io/kyverno/background-controller:v1.15.2
+      - reg.kyverno.io/kyverno/cleanup-controller:v1.15.2
+      - reg.kyverno.io/kyverno/kyverno-cli:v1.15.2
+      - reg.kyverno.io/kyverno/kyverno:v1.15.2
+      - reg.kyverno.io/kyverno/kyvernopre:v1.15.2
+      - reg.kyverno.io/kyverno/reports-controller:v1.15.2
+      - registry.k8s.io/kubectl:v1.32.7

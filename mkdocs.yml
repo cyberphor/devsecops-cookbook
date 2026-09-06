@@ -29,3 +29,4 @@ nav:
   - "Initialize Zarf on a Kubernetes Cluster": recipe-22/README.md
   - "Deploy UDS Core onto a Kubernetes Cluster": recipe-23/README.md
   - "Deploy an app onto a Kubernetes cluster using Zarf and UDS": recipe-24/README.md
+  - "Using Pepr and Attestations to Enforce Software Supply Chain Security": recipe-25/README.md

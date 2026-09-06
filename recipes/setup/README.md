@@ -276,3 +276,42 @@ uds version
 ```
 v0.35.1
 ```
+
+## Install the Node Version Manager
+**Step 1.** Running this command will put the `nvm` binary in your home directory. So if you need or want to un-install it (to install a new version), just delete the `.nvm` folder in your home directory.
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.7/install.sh | bash
+```
+
+**Step 2.** Copy, paste, and run the commands printed in the previous step.
+```bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+```
+
+## Install Node.js
+**Step 1.** Use [NVM](#install-the-node-version-manager) to install the latest copy of Node.js (aka Node), the Node Package Manager (NPM), and Node Package Execute (NPX). If you're having any issues installing the latest version of Node, NPM, or NPX, verify you have the correct certificates installed locally. 
+```bash
+nvm install node
+```
+
+**Step 2.** To confirm what version of Node is installed, enter the command below. 
+```bash
+node --version
+```
+
+You should get output similar to below. 
+```
+v26.8.1
+```
+
+**Step 3.** To confirm what version of NPM and NPX are installed, enter the command below. 
+```bash
+npm --version
+```
+
+You should get output similar to below. 
+```
+11.19.0
+```
