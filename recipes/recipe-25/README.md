@@ -2,11 +2,11 @@
 
 ## Setup
 Before getting started, make sure you:
-* [have the k3d CLI installed](../setup/README.md#install-the-k3d-cli)
-* [have the UDS CLI installed](../setup/README.md#install-the-uds-cli)
-* [have a Kubernetes cluster running UDS Core](../recipe-23/README.md#recipe)  
-* [have the Node Version Manager installed](../setup/README.md#install-the-node-version-manager)  
-* [have Node.js, the Node Package Manager (NPM), and Node Package Execute (NPX) installed](../setup/README.md#install-nodejs)
+  * [have the k3d CLI installed](../setup/README.md#install-the-k3d-cli)  
+  * [have the UDS CLI installed](../setup/README.md#install-the-uds-cli)  
+  * [have a Kubernetes cluster running UDS Core](../recipe-23/README.md#recipe)  
+  * [have the Node Version Manager installed](../setup/README.md#install-the-node-version-manager)  
+  * [have Node.js, the Node Package Manager (NPM), and Node Package Execute (NPX) installed](../setup/README.md#install-nodejs)
 
 ## Recipe
 **Step 1.** Use NPX and the `pepr` tool to create a Pepr module. In layman's terms, a Pepr module is a self-contained TypeScript project. In the context of Pepr, a Pepr module is a collection of "capabilities." NOTE: the `pepr` tool will also initialize your TypeScript project as a Git repository.
