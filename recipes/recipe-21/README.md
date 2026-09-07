@@ -1,27 +1,11 @@
 # Deploy a Kubernetes Cluster Using k3d
 
-**Step 1.** Install `kubectl`.  
+## Ingredients
+* [Install Kubectl](../setup/README.md#install-kubectl)  
+* [Install k3d](../setup/README.md#install-k3d)    
 
-**Step 2.** Install [k3d](../setup/README.md#install-k3d). 
+## Recipe
+Text goes here.
 
-**Step 3.** Install NPM. 
-
-**Step 4.** Create a Node module.
-```bash
-npx pepr init
-```
-
-**Step 5.** Change directories to the Node module you just created. 
-```bash
-cd demo
-```
-
-**Step 6.** Run the command below. 
-```bash
-npm run k3d-setup
-```
-
-**Step 7.** Text goes here.
-```bash
-npx pepr dev
-```
+## Cleaning Up
+Text goes here.

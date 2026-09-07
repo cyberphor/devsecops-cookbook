@@ -1,6 +1,6 @@
 # Enforce Supply Chain Security Using Attestations and Policy-as-Code
 
-## Before You Start
+## Ingredients
 * [Install Syft](../setup/README.md#install-syft) 
 * [Install Grype](../setup/README.md#install-grype)
 * [Install Go](../setup/README.md#install-go)

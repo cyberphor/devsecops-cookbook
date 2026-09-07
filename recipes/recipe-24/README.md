@@ -1,6 +1,12 @@
-# Deploy an app onto a Kubernetes cluster using Zarf and UDS
+# Deploy an App Using Zarf
 
-Before getting started, [make sure you have a Kubernetes cluster running UDS Core](../recipe-23/README.md#recipe). The following steps will produce a number of files and folders. By the end of this process, your current working directory will look like below. 
+## Ingredients
+* [Install k3d](../setup/README.md#install-k3d)  
+* [Install UDS](../setup/README.md#install-uds)  
+* [Deploy UDS Core onto a Kubernetes Cluster](../recipe-23/README.md)  
+
+## Recipe
+The following steps will produce a number of files and folders. By the end of this process, your current working directory will look like below. 
 ```
 ├── Makefile
 ├── charts
@@ -14,7 +20,6 @@ Before getting started, [make sure you have a Kubernetes cluster running UDS Cor
 └── zarf.yaml
 ```
 
-## Recipe
 **Step 1.** Create a Makefile and add the content below to it. NOTE: this specific Makefile has the Zarf package name and version `sonic` and `v0.1.0` hardcoded.  
 ```makefile
 # ---------------------------------------------------------

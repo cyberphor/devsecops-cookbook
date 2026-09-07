@@ -1,14 +1,10 @@
 # Deploy a Kubernetes Cluster Using KinD
-* [Setup](#setup)
-* [Deploy the Kubernetes Cluster](#deploy-the-kubernetes-cluster)
-* [References](#references)
 
-## Setup
-***Step 1.** Install `kubectl`.  
+## Ingredients
+* [Install Kubectl](../setup/README.md#install-kubectl)  
+* [Install KinD](../setup/README.md#install-kind)    
 
-**Step 2.** Install `kind`.  
-
-## Deploy the Kubernetes Cluster
+## Recipe
 **Step 1.** Deploy a Kubernetes cluster called `demo` using `kind`.
 ```bash
 kind create cluster --name "demo-cluster" --image kindest/node:v1.34.0 --config cluster.yaml
@@ -25,6 +21,9 @@ Client Version: v1.35.0
 Kustomize Version: v5.7.1
 Server Version: v1.34.0
 ```
+
+## Cleaning Up
+Text goes here.
 
 ## References
 **kind: Local Registry**  

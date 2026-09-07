@@ -1,8 +1,8 @@
 # Deploy UDS Core onto a Kubernetes Cluster
 
-## Before You Start
-* [Install the k3d CLI](../setup/README.md#install-the-k3d-cli)  
-* [Install the UDS CLI](../setup/README.md#install-the-uds-cli)  
+## Ingredients
+* [Install k3d](../setup/README.md#install-k3d)  
+* [Install UDS](../setup/README.md#install-uds)  
 
 ## Recipe
 **Step 1.** Deploy a k3s cluster with UDS Core installed using the UDS CLI. The UDS CLI will invoke `k3d` to deploy a k3s cluster. 

@@ -155,7 +155,7 @@ sudo add-apt-repository --yes --update ppa:ansible/ansible
 sudo apt install ansible
 ```
 
-## Install `sqlcmd`
+## Install Sqlcmd
 **Step 1.** Import the GPG keys for Microsoft's Ubuntu package repository.
 ```bash
 sudo su
@@ -289,8 +289,8 @@ chmod +x uds &&\
 sudo mv uds /usr/local/bin/
 ```
 
-## Install the Node Version Manager
-**Step 1.** Running this command will put the `nvm` binary in your home directory. So if you need or want to un-install it (to install a new version), just delete the `.nvm` folder in your home directory.
+## Install NVM
+**Step 1.** Running this command will put the Node Version Manager (NVM) binary in your home directory. So if you need or want to un-install it (to install a new version), just delete the `.nvm` folder in your home directory.
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.7/install.sh | bash
 ```
@@ -302,8 +302,8 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 ```
 
-## Install Node.js, the Node Package Manager, and the Node Package Executor
-**Step 1.** Use [NVM](#install-the-node-version-manager) to install the latest copy of Node.js (aka Node), the Node Package Manager (NPM), and Node Package Executor (NPX). If you're having any issues installing the latest version of Node, NPM, or NPX, verify you have the correct certificates installed locally. 
+## Install Node, NPM, and NPX
+**Step 1.** Use [NVM](#install-the-node-version-manager) to install the latest copy of Node (aka Node.js), the Node Package Manager (NPM), and Node Package Executor (NPX). If you're having any issues installing the latest version of Node, NPM, or NPX, verify you have the correct certificates installed locally. 
 ```bash
 nvm install node
 ```

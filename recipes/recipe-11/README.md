@@ -1,4 +1,4 @@
-# Terraform Templating
+# GitHub Actions Workflow
 
 ## Ingredients
 Text goes here.

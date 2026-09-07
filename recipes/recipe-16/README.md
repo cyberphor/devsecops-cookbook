@@ -1,6 +1,7 @@
 # Dashboards-as-Code
 The purpose of this recipe is to demonstrate the idea of "Dashboards-as-Code." It assumes you have `terraform` and `az` installed.
 
+## Recipe
 **Step 1.** Save your environment variables to a file called `.env` for `az` to use.
 ```bash
 echo 'export TENANT_ID="..."' > .env
@@ -64,6 +65,9 @@ terraform state rm module.GrafanaDashboard.grafana_dashboard.performance
 ```bash
 rm -rf .terraform && rm .terraform* && rm *.tfstate
 ```
+
+## Cleaning Up
+Text goes here.
 
 ## References
 * [Grafana: Azure Monitor data source](https://grafana.com/docs/grafana/latest/datasources/azure-monitor/)
