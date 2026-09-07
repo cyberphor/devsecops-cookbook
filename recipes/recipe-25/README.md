@@ -1,6 +1,7 @@
 # Using Pepr and Attestations to Enforce Software Supply Chain Security
 
 Before getting started, make sure you:  
+
 * [have the k3d CLI installed](../setup/README.md#install-the-k3d-cli)  
 * [have the UDS CLI installed](../setup/README.md#install-the-uds-cli)  
 * [have a Kubernetes cluster running UDS Core](../recipe-23/README.md#recipe)  
@@ -26,57 +27,10 @@ When prompted, press enter values similar to below.
  … attestations
 ✔ (Recommended) Enter a description for the new Pepr module.
  … Block pod creation requests that don't have container attestations.
-✔ How do you want Pepr to handle errors encountered during K8s operations? › Reject the operation
+✔ How do you want Pepr to handle errors encountered during K8s operations?
+ … Reject the operation
 ✔ Enter a unique identifier for the new Pepr module.
  … 1
-To be generated:
-
-    attestations
-    ├── eslint.config.mjs
-    ├── .gitignore
-    ├── .prettierrc
-    ├── capabilties
-    │   ├── hello-pepr.samples.yaml     
-    │   └── hello-pepr.ts     
-    ├── package.json
-    │   {
-    │     name: 'attestations',
-    │     version: '0.0.1',
-    │     description: 'Block pod creation requests that don't have container attestations.',
-    │     keywords: [ 'pepr', 'k8s', 'policy-engine', 'pepr-module', 'security' ],
-    │     engines: { node: '>=22.19.0' },
-    │     pepr: {
-    │       uuid: '1',
-    │       onError: 'reject',
-    │       webhookTimeout: 10,
-    │       customLabels: { namespace: { 'pepr.dev': '' } },
-    │       alwaysIgnore: { namespaces: [] },
-    │       admission: { alwaysIgnore: { namespaces: [] } },
-    │       watch: { alwaysIgnore: { namespaces: [] } },
-    │       includedFiles: [],
-    │       env: {}
-    │     },
-    │     scripts: {
-    │       'k3d-setup': "k3d cluster delete pepr-dev && k3d cluster create pepr-dev --k3s-arg '--debug@server:0' --wait && kubectl rollout status deployment -n kube-system"
-    │     },
-    │     dependencies: { pepr: '2.0.0', undici: '^7.0.1' },
-    │     devDependencies: {
-    │       '@eslint/eslintrc': '^3.3.6',
-    │       '@eslint/js': '^10.0.1',
-    │       '@typescript-eslint/eslint-plugin': '8.66.0',
-    │       '@typescript-eslint/parser': '8.66.0',
-    │       '@types/node': '^24.13.3',
-    │       eslint: '^10.8.0',
-    │       globals: '17.9.0',
-    │       typescript: '^5.8.3'
-    │     },
-    │     overrides: { 'brace-expansion': '1.1.11' }
-    │   }
-    ├── pepr.ts
-    ├── README.md
-    └── tsconfig.json
-  
-? Create the new Pepr module? › (y/N)
 ```
 
 **Step 2.** Change directories to the Pepr module you just created. The main entrypoint to the Pepr module is the `pepr.ts` file.
