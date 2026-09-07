@@ -82,12 +82,6 @@ cd ..
 # sonic-k8s-manifest.yaml
 
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: sonic
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -148,6 +142,13 @@ spec:
           app.kubernetes.io/component: frontend
         host: sonic
         port: 8080
+  sso:
+    - name: Sonic
+      clientId: sonic
+      redirectUris:
+        - https://sonic.uds.dev/login
+      enableAuthserviceSelector:
+        app.kubernetes.io/component: frontend
 
 ```
 
@@ -184,15 +185,44 @@ components:
 
 ```
 
-**Step 10.** Create a Zarf package using the files you just created. 
-```bash
-uds zarf package create --confirm
+**Step 10.** Create a file called `Makefile` and add the content below to it. NOTE: this specific Makefile has hardcoded values for the Zarf package, name, architecture, and version.  
+```makefile
+# ---------------------------------------------------------
+# Set the default target.
+# ---------------------------------------------------------
+
+.DEFAULT_GOAL := create-and-deploy
+
+# ---------------------------------------------------------
+# Create and deploy the Zarf package.
+# ---------------------------------------------------------
+
+.PHONY: create-and-deploy
+.SILENT: create-and-deploy
+
+create-and-deploy: remove
+	uds zarf package create --confirm &&\
+	uds zarf package deploy zarf-package-sonic-amd64-0.1.0.tar.zst --confirm
+
+# ---------------------------------------------------------
+# Remove the Zarf package.
+# ---------------------------------------------------------
+
+.PHONY: remove
+.SILENT: remove
+
+remove: 
+	uds zarf package remove sonic --confirm || true
+	uds zarf tools kubectl delete namespace sonic || true
 ```
 
-**Step 11.** Deploy the Zarf package you just created.
+**Step 11.** Create and deploy your Zarf package.
 ```bash
-uds zarf package deploy zarf-package-sonic-amd64-0.1.0.tar.zst --confirm
+Make
 ```
 
 ## Cleaning Up
 When you're done, remove your Zarf package from your Kubernetes cluster and then delete the `.zst` file in your current working directory.
+```bash
+make remove
+```

@@ -14,3 +14,10 @@ spec:
           app.kubernetes.io/component: frontend
         host: sonic
         port: 8080
+  sso:
+    - name: Sonic
+      clientId: sonic
+      redirectUris:
+        - https://sonic.uds.dev/login
+      enableAuthserviceSelector:
+        app.kubernetes.io/component: frontend
