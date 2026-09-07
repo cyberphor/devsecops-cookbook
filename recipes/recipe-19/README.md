@@ -1,80 +1,19 @@
 # Enforce Supply Chain Security Using Attestations and Policy-as-Code
-* [Setup](#setup)
-* [Initialize Your Environment Variables](#initialize-your-environment-variables)
-* [Deploy a Container Registry](#deploy-a-container-registry)
-* [Deploy a Kubernetes Cluster](#deploy-a-kubernetes-cluster)
-* [Connect the Kubernetes Cluster to the Container Registry](#connect-the-kubernetes-cluster-to-the-container-registry)
-* [Install Kyverno on the Kubernetes Cluster](#install-kyverno-on-the-kubernetes-cluster)
-* [Create a Key Pair for `cosign`](#create-a-key-pair-for-cosign)
-* [Create and Apply a Kyverno Policy](#create-and-apply-a-kyverno-policy)
-* [Pull, Tag, and Push a Container Image to the Container Registry](#pull-tag-and-push-a-container-image-to-the-container-registry)
-* [Create an SBOM](#create-an-sbom)
-* [Scan the SBOM](#scan-the-sbom)
-* [Create a VEX Document and Rescan the SBOM](#create-a-vex-document-and-rescan-the-sbom)
-* [Create Attestations that Link the SBOM and Scan to the Container Image](#create-attestations-that-link-the-sbom-and-scan-to-the-container-image)
-* [Deploy the Container Image on the Kubernetes Cluster](#deploy-the-container-image-onto-the-kubernetes-cluster)
-* [References](#references)
 
-## Setup
-**Step 1.** Install `syft`.
-```bash
-curl -sSfL https://get.anchore.io/syft | sudo sh -s -- -b /usr/local/bin
-```
+## Before You Start
+* [Install Syft](../setup/README.md#install-syft) 
+* [Install Grype](../setup/README.md#install-grype)
+* [Install Go](../setup/README.md#install-go)
+* [Install Vexctl](../setup/README.md#install-vexctl)
+* [Install Cosign](../setup/README.md#install-cosign)
+* [Install Docker](../setup/README.md#install-docker)
+* [Install Kubectl](../setup/README.md#install-kubectl)
+* [Install KinD](../setup/README.md#install-kind)
+* [Install Helm](../setup/README.md#install-helm)
+* [Install Kyverno](../setup/README.md#install-kyverno)
 
-**Step 2.** Install `grype`.
-```bash
-curl -sSfL https://get.anchore.io/grype | sudo sh -s -- -b /usr/local/bin
-```
-
-**Step 3.** Install `go`.
-```bash
-wget https://go.dev/dl/go1.26.0.linux-amd64.tar.gz
-sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf go1.26.0.linux-amd64.tar.gz
-rm go1.26.0.linux-amd64.tar.gz
-```
-
-**Step 4.** Install `vexctl`.
-```bash
-go install github.com/openvex/vexctl@latest
-```
-
-**Step 5.** Install `cosign`.
-```bash
-go install github.com/sigstore/cosign/v2/cmd/cosign@latest
-```
-
-**Step 6.** Install `docker` using [instructions online](https://docs.docker.com/engine/install).
-
-**Step 7.** Install `kubectl`.
-```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-```
-
-**Step 8.** Install `helm`.
-```bash
-sudo apt-get install curl gpg apt-transport-https --yes
-curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-sudo apt-get update
-sudo apt-get install helm
-```
-
-**Step 9.** Install `kind`.
-```bash
-go install sigs.k8s.io/kind@v0.31.0
-```
-
-**Step 10.** Install the Kyverno CLI.
-```bash
-curl -LO https://github.com/kyverno/kyverno/releases/download/v1.12.0/kyverno-cli_v1.12.0_linux_x86_64.tar.gz
-tar -xvf kyverno-cli_v1.12.0_linux_x86_64.tar.gz
-sudo mv kyverno /usr/local/bin/
-rm kyverno-cli_v1.12.0_linux_x86_64.tar.gz
-```
-
-## Initialize Your Environment Variables
+## Recipe
+### Initialize Your Environment Variables
 **Step 1.** Initialize all the environment variables that will be used. The `REGISTRY_PORT` environment variable must be set to an port number that doesn't conflict the port Docker's local container registry is listening on (i.e., you cannot use `5000`). 
 ```bash
 export REGISTRY_NAME="demo-registry"
@@ -84,7 +23,7 @@ export CLUSTER_NAME="demo-cluster"
 export COSIGN_PASSWORD="demo"
 ```
 
-## Deploy a Container Registry
+### Deploy a Container Registry
 **Step 1.** Create a public and private key pair for the container registry you're about deploy.
 ```bash
 openssl req -x509 -nodes -days 365 \
@@ -127,7 +66,7 @@ You should get output similar to below.
 {"repositories":[]}
 ```
 
-## Deploy a Kubernetes Cluster
+### Deploy a Kubernetes Cluster
 **Step 1.** Deploy a Kubernetes cluster called `demo` using `kind`.
 ```bash
 kind create cluster --name ${CLUSTER_NAME} --image kindest/node:v1.34.0 --config cluster.yaml
@@ -159,7 +98,7 @@ docker exec ${CLUSTER_NAME}-worker update-ca-certificates
 docker exec ${CLUSTER_NAME}-worker2 update-ca-certificates
 ```
 
-## Connect the Kubernetes Cluster to the Container Registry
+### Connect the Kubernetes Cluster to the Container Registry
 **Step 1.** Identify the configuration your Kubernetes cluster's network is using. 
 ```bash
 docker network inspect kind | jq ".[0].IPAM"
@@ -187,7 +126,7 @@ You should get output similar to below. Pay special attention to the IPv4 `Subne
 docker network connect kind ${REGISTRY_NAME}
 ```
 
-## Install Kyverno on the Kubernetes Cluster
+### Install Kyverno on the Kubernetes Cluster
 **Step 1.** Add the URL for the Kyverno Helm chart repo to your local Helm configuration.
 ```bash
 helm repo add kyverno https://kyverno.github.io/kyverno/
@@ -227,7 +166,7 @@ kyverno-cleanup-controller-6bcc48b5-k4c2k       1/1     Running   0          41s
 kyverno-reports-controller-5dbc78665-t9ksf      1/1     Running   0          41s
 ```
 
-## Create a Key Pair for `cosign`
+### Create a Key Pair for `cosign`
 **Step 1.** Create another public and private key pair albeit for `cosign` to use. 
 ```bash
 cosign generate-key-pair
@@ -235,7 +174,7 @@ cosign generate-key-pair
 
 **Step 2.** Replace the public key in the provided Kyverno policy with the one generated in the previous step.
 
-## Create and Apply a Kyverno Policy
+### Create and Apply a Kyverno Policy
 **Step 1.** Add the contents of `cosign.pub` to `kyverno-policy.yaml` and then, apply a Kyverno policy to the Kubernetes cluster.
 ```bash
 kubectl apply -f kyverno-policy.yaml
@@ -246,7 +185,7 @@ The output should be similar to below.
 clusterpolicy.kyverno.io/check-images created
 ```
 
-## Pull, Tag, and Push a Container Image to the Container Registry
+### Pull, Tag, and Push a Container Image to the Container Registry
 **Step 1.** Pull a container image. 
 ```bash
 docker pull vulnerables/web-dvwa:latest
@@ -317,7 +256,7 @@ The output should look similar to below.
 dae203fe11646a86937bf04db0079adef295f426da68a92b40e3b181f337daa7
 ```
 
-## Create an SBOM
+### Create an SBOM
 **Step 1.** Create an SBOM for the container image using `syft`.
 ```bash
 syft localhost:${REGISTRY_PORT}/web-dvwa:latest -o json=sbom.json
@@ -335,7 +274,7 @@ You should get output similar to below.
 A newer version of syft is available for download: 1.42.1 (installed version is 1.41.1)   
 ```
 
-## Scan the SBOM
+### Scan the SBOM
 **Step 1.** Scan the SBOM for Common Vulnerabilities and Exposures (CVEs) using `grype`.
 ```bash
 grype sbom.json -o json=raw-scan.json
@@ -354,7 +293,7 @@ You should get output similar to below. Note the number of vulnerability matches
 cat raw-scan.json | jq '.vulnerabilities'
 ```
 
-## Create a VEX Document and Rescan the SBOM
+### Create a VEX Document and Rescan the SBOM
 **Step 1.** Pick a component and a CVE (e.g., `CVE-2019-11043`) Grype associated with it that you want to suppress. Then, run Grype again, but pipe its output to `jq` to get the Package URL its using for the component you want to suppress. 
 ```bash
 grype sbom.json -o json | jq -r '.matches[] | select(.vulnerability.id=="CVE-2019-11043") | .artifact.purl'
@@ -431,7 +370,7 @@ jq '{
 }' updated-scan.json > scan.json
 ```
 
-## Create Attestations that Link the SBOM and Scan to the Container Image
+### Create Attestations that Link the SBOM and Scan to the Container Image
 **Step 1.** Sign the container image.
 ```bash
 cosign sign \
@@ -506,7 +445,7 @@ cosign verify-attestation \
 
 Kyverno will perform the same verifications when an attempt to deploy the container image is made.
 
-## Deploy the Container Image onto the Kubernetes Cluster
+### Deploy the Container Image onto the Kubernetes Cluster
 **Step 1.** Try to deploy a workload on your Kubernetes cluster that uses your container image. 
 ```bash
 kubectl apply -f app.yaml

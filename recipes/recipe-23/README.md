@@ -1,11 +1,11 @@
 # Deploy UDS Core onto a Kubernetes Cluster
 
+## Before You Start
+* [Install the k3d CLI](../setup/README.md#install-the-k3d-cli)  
+* [Install the UDS CLI](../setup/README.md#install-the-uds-cli)  
+
 ## Recipe
-**Step 1.** Install [k3d](../setup/README.md#install-k3d). 
-
-**Step 2.** Install the [UDS CLI](../setup/README.md#install-the-uds-cli). 
-
-**Step 3.** Deploy a k3s cluster with UDS Core installed using the UDS CLI. The UDS CLI will invoke `k3d` to deploy a k3s cluster. 
+**Step 1.** Deploy a k3s cluster with UDS Core installed using the UDS CLI. The UDS CLI will invoke `k3d` to deploy a k3s cluster. 
 ```bash
 uds deploy k3d-core-demo:latest
 ```
@@ -20,12 +20,12 @@ When prompted, enter `y` to deploy the UDS Core bundle. When the command finishe
      zarf connect prometheus   | Directly connect to the Prometheus HTTP service 
 ```
 
-**Step 4.** To verify all UDS Core pods are working, run the command below. NOTE: There should be no output.
+**Step 2.** To verify all UDS Core pods are working, run the command below. NOTE: There should be no output.
 ```bash
 uds zarf tools kubectl get pods -A --no-headers | grep -Ev '(Running|Completed)'
 ```
 
-**Step 5.** If they are not already in your `/etc/hosts` file, add DNS entries for each of the UDS Core services you just deployed. 
+**Step 3.** If they are not already in your `/etc/hosts` file, add DNS entries for each of the UDS Core services you just deployed. 
 ```bash
 echo "127.0.0.1 sso.uds.dev" | sudo tee -a /etc/hosts
 echo "127.0.0.1 portal.uds.dev" | sudo tee -a /etc/hosts
@@ -45,7 +45,7 @@ powershell_ise.exe C:\Windows\System32\drivers\etc\hosts
 127.0.0.1 keycloak.admin.uds.dev
 ```
 
-**Step 6.** Setup a port-forward for Keycloak traffic so you can create an administrator account.
+**Step 4.** Setup a port-forward for Keycloak traffic so you can create an administrator account.
 ```bash
 kubectl -n keycloak port-forward svc/keycloak-http 8080:8080
 ```

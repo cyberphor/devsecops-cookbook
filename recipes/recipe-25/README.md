@@ -1,12 +1,10 @@
-# Using Pepr and Attestations to Enforce Software Supply Chain Security
+# Using Pepr to Enforce Software Supply Chain Security
 
-Before getting started, make sure you:  
-
-* [have the k3d CLI installed](../setup/README.md#install-the-k3d-cli)  
-* [have the UDS CLI installed](../setup/README.md#install-the-uds-cli)  
-* [have a Kubernetes cluster running UDS Core](../recipe-23/README.md#recipe)  
-* [have the Node Version Manager installed](../setup/README.md#install-the-node-version-manager)  
-* [have Node.js, the Node Package Manager (NPM), and Node Package Execute (NPX) installed](../setup/README.md#install-nodejs)
+## Before You Start
+* [Install k3d](../setup/README.md#install-k3d)  
+* [Install UDS](../setup/README.md#install-uds)  
+* [Deploy UDS Core onto a Kubernetes Cluster](../recipe-23/README.md#recipe)  
+* [Install Node.js, the Node Package Manager (NPM), and Node Package Execute (NPX)](../setup/README.md#install-nodejs)
 
 ## Recipe
 **Step 1.** Use NPX and the `pepr` tool to create a Pepr module. In layman's terms, a Pepr module is a self-contained TypeScript project. In the context of Pepr, a Pepr module is a collection of "capabilities." NOTE: the `pepr` tool will also initialize your TypeScript project as a Git repository.

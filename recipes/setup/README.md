@@ -1,20 +1,4 @@
 # Setup Guides
-* [Create SSH Keys](#create-ssh-keys)
-* [Setup Single Sign-On (SSO) Using SSH](#setup-single-sign-on-using-ssh)
-* [Add Your SSH Public Key to GitHub](#add-your-ssh-public-key-to-github)
-* [Create a GitHub Personal Access Token](#create-a-github-personal-access-token)
-* [Create an Azure DevOps Personal Access Token](#create-an-azure-devops-personal-access-token)
-* [Install the Azure CLI](#install-the-azure-cli)
-* [Install Terraform](#install-terraform)
-* [Install Ansible](#install-ansible)
-* [Install sqlcmd](#install-sqlcmd)
-* [Install Homebrew on macOS](#install-homebrew-on-macos)
-* [Install Packer](#install-packer)
-* [Install Kubectl](#install-kubectl)
-* [Install KinD](#install-kind)
-* [Install Zarf](#install-zarf)
-* [Install k3d](#install-k3d)
-* [Install the UDS CLI](#install-the-uds-cli)
 
 ## Create SSH Keys 
 **Step 1.** Generate an SSH key pair.  
@@ -171,7 +155,7 @@ sudo add-apt-repository --yes --update ppa:ansible/ansible
 sudo apt install ansible
 ```
 
-## Install sqlcmd
+## Install `sqlcmd`
 **Step 1.** Import the GPG keys for Microsoft's Ubuntu package repository.
 ```bash
 sudo su
@@ -225,10 +209,50 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashi
 sudo apt update && sudo apt install packer
 ```
 
+## Install Syft
+```bash
+curl -sSfL https://get.anchore.io/syft | sudo sh -s -- -b /usr/local/bin
+```
+
+## Install Grype
+```bash
+curl -sSfL https://get.anchore.io/grype | sudo sh -s -- -b /usr/local/bin
+```
+
+## Install Go
+```bash
+wget https://go.dev/dl/go1.26.0.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.26.0.linux-amd64.tar.gz
+rm go1.26.0.linux-amd64.tar.gz
+```
+
+## Install Vexctl
+```bash
+go install github.com/openvex/vexctl@latest
+```
+
+## Install Cosign
+```bash
+go install github.com/sigstore/cosign/v2/cmd/cosign@latest
+```
+
+## Install Docker
+Refer to the [instructions online](https://docs.docker.com/engine/install).
+
 ## Install Kubectl
 ```bash
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+```
+
+## Install Helm
+```bash
+sudo apt-get install curl gpg apt-transport-https --yes
+curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
 ```
 
 ## Install KinD
@@ -236,8 +260,12 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 go install sigs.k8s.io/kind@v0.31.0
 ```
 
+## Install Kyverno
 ```bash
-kind delete cluster -n demo-cluster
+curl -LO https://github.com/kyverno/kyverno/releases/download/v1.12.0/kyverno-cli_v1.12.0_linux_x86_64.tar.gz
+tar -xvf kyverno-cli_v1.12.0_linux_x86_64.tar.gz
+sudo mv kyverno /usr/local/bin/
+rm kyverno-cli_v1.12.0_linux_x86_64.tar.gz
 ```
 
 ## Install Zarf
@@ -248,33 +276,17 @@ chmod +x zarf
 sudo mv zarf /usr/local/bin/zarf
 ```
  
-## Install the k3d CLI
+## Install k3d
 k3d allows you to provision a multi-node k3s cluster on a single machine using Docker. k3s is a lightweight Kubernetes distribution by Rancher. 
 ```bash
 wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 ```
 
-```bash
-k3d cluster list
-```
-
-```bash
-k3d cluster delete <cluster_name>
-```
-
-## Install the UDS CLI
+## Install UDS
 ```bash
 wget -O uds https://github.com/defenseunicorns/uds-cli/releases/download/v0.35.1/uds-cli_v0.35.1_Linux_amd64 &&\
 chmod +x uds &&\
 sudo mv uds /usr/local/bin/
-```
-
-```bash
-uds version
-```
-
-```
-v0.35.1
 ```
 
 ## Install the Node Version Manager
@@ -290,8 +302,8 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 ```
 
-## Install Node.js
-**Step 1.** Use [NVM](#install-the-node-version-manager) to install the latest copy of Node.js (aka Node), the Node Package Manager (NPM), and Node Package Execute (NPX). If you're having any issues installing the latest version of Node, NPM, or NPX, verify you have the correct certificates installed locally. 
+## Install Node.js, the Node Package Manager, and the Node Package Executor
+**Step 1.** Use [NVM](#install-the-node-version-manager) to install the latest copy of Node.js (aka Node), the Node Package Manager (NPM), and Node Package Executor (NPX). If you're having any issues installing the latest version of Node, NPM, or NPX, verify you have the correct certificates installed locally. 
 ```bash
 nvm install node
 ```
@@ -301,17 +313,7 @@ nvm install node
 node --version
 ```
 
-You should get output similar to below. 
-```
-v26.8.1
-```
-
 **Step 3.** To confirm what version of NPM and NPX are installed, enter the command below. 
 ```bash
 npm --version
-```
-
-You should get output similar to below. 
-```
-11.19.0
 ```
