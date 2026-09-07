@@ -1,6 +1,5 @@
 # Using Pepr and Attestations to Enforce Software Supply Chain Security
 
-## Setup
 Before getting started, make sure you:  
 * [have the k3d CLI installed](../setup/README.md#install-the-k3d-cli)  
 * [have the UDS CLI installed](../setup/README.md#install-the-uds-cli)  
