@@ -248,7 +248,7 @@ chmod +x zarf
 sudo mv zarf /usr/local/bin/zarf
 ```
  
-## Install k3d
+## Install the k3d CLI
 k3d allows you to provision a multi-node k3s cluster on a single machine using Docker. k3s is a lightweight Kubernetes distribution by Rancher. 
 ```bash
 wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash

@@ -2,6 +2,8 @@
 
 ## Setup
 Before getting started, make sure you:
+* [have the k3d CLI installed](../setup/README.md#install-the-k3d-cli)
+* [have the UDS CLI installed](../setup/README.md#install-the-uds-cli)
 * [have a Kubernetes cluster running UDS Core](../recipe-23/README.md#recipe)  
 * [have the Node Version Manager installed](../setup/README.md#install-the-node-version-manager)  
 * [have Node.js, the Node Package Manager (NPM), and Node Package Execute (NPX) installed](../setup/README.md#install-nodejs)
