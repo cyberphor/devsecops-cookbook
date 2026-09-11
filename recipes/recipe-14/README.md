@@ -1,17 +1,23 @@
 # Create and Use a Virtual Machine Template in Proxmox with Packer and Terraform
 
+## Ingredients
+
 **References**  
+
 * [Packer: Input Variables and local variables](https://developer.hashicorp.com/packer/guides/hcl/variables#assigning-variables)
 * [Cloud-Init: Data Sources - NoCloud](https://cloudinit.readthedocs.io/en/latest/reference/datasources/nocloud.html)
 * [phoenixNAP: How to Install Kubernetes on Ubuntu 22.04](https://phoenixnap.com/kb/install-kubernetes-on-ubuntu)
 * [Terraform: Cloud Init Guide](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/guides/cloud_init)
 
 **Software Versions**  
+
 | Software                    | Version     |
 | --------------------------- | ----------- |
 | Proxmox Virtual Environment | `8.2.2`     |
 | Proxmmox Packer Plugin      | `1`         |
 | Proxmox Terraform Provider  | `3.0.1-rc1` |
+
+## Recipe
 
 **Step 1.** Install Proxmox. 
 
