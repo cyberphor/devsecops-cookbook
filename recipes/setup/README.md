@@ -292,7 +292,7 @@ sudo mv uds /usr/local/bin/
 ## Install NVM
 **Step 1.** Running this command will put the Node Version Manager (NVM) binary in your home directory. So if you need or want to un-install it (to install a new version), just delete the `.nvm` folder in your home directory.
 ```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.7/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
 ```
 
 **Step 2.** Copy, paste, and run the commands printed in the previous step.
