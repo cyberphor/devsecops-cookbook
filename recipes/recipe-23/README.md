@@ -52,10 +52,10 @@ powershell_ise.exe C:\Windows\System32\drivers\etc\hosts
 127.0.0.1 keycloak.admin.uds.dev
 ```
 
-**Step 4.** Setup a port-forward for Keycloak traffic so you can create an administrator account.
+**Step 4.** Connect to Keycloak so you can create an administrator account (click the link when prompted). 
 
 ```bash
-kubectl -n keycloak port-forward svc/keycloak-http 8080:8080
+zarf connect keycloak
 ```
 
 ## Troubleshooting
